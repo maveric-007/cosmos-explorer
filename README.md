@@ -1,1 +1,1 @@
-# cosmos-exporer
+# cosmos-explorer
