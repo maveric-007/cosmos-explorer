@@ -73,7 +73,7 @@ const SCALE_BANDS=[{mode:'solar',lo:0,hi:20,near:38,far:165,caption:'Solar syste
 const TIME_RANGES={solar:{min:0,max:1826,step:.1,unit:'days'},local:{min:-20000,max:20000,step:5,unit:'yr'},milky:{min:-230000000,max:230000000,step:100000,unit:'yr'},galaxies:{min:-1000000000,max:1000000000,step:1000000,unit:'yr'},universe:{min:-13800000000,max:0,step:10000000,unit:'yr'}};
 const el=id=>document.getElementById(id), stage=el('stage'), labelHost=el('objectlabels');
 const state={mode:'solar',selected:'Earth',day:0,timeYears:0,scale:8,playing:false,speed:10,tracks:true,well:true,labels:true,spin:0.5,phi:.35,theta:1.06,distance:78,target:null,moved:false,showConstellations:true,selectedFigure:'Ori',trueDepth:false};
-let THREE, renderer, scene, camera, root, points=[], objects=[], markers=[], wellGroup, starBG, lookbackShell, universeWeb=null, constellationCatalog=null, clockPrev=0, lastInfo=0, lastLabels=0;
+let THREE, renderer, scene, camera, root, points=[], objects=[], markers=[], wellGroup, starBG, lookbackShell, universeWeb=null, constellationCatalog=null, catalogPoints=null, clockPrev=0, lastInfo=0, lastLabels=0;
 
 /* Flat ΛCDM distance ladder. H0 and Ωm follow Planck 2018 baseline; radiation is approximate.
    Integrals use dln(a): t(a) = H0^-1∫dln(a)/E(a), χ(a) = c/H0∫dln(a)/(a E(a)).
@@ -134,7 +134,7 @@ function buildConstellationOverlay(){
  const g=new THREE.BufferGeometry();
  g.setAttribute('position',new THREE.Float32BufferAttribute(xyz,3));
  g.setAttribute('color',new THREE.Float32BufferAttribute(rgb,3));
- root.add(new THREE.Points(g,new THREE.PointsMaterial({vertexColors:true,transparent:true,opacity:.88,size:state.mode==='local'?1.6:1.8,sizeAttenuation:false,depthWrite:false})));
+ catalogPoints=new THREE.Points(g,new THREE.PointsMaterial({vertexColors:true,transparent:true,opacity:.88,size:state.mode==='local'?1.6:1.8,sizeAttenuation:false,depthWrite:false}));root.add(catalogPoints);
  const selected=state.selectedFigure==='ALL'?catalog.constellations:catalog.constellations.filter(c=>c[1]===state.selectedFigure),segs=[];
  for(const c of selected)for(const chain of c[2])for(let i=1;i<chain.length;i++){
   const p=byHip.get(chain[i-1]),q=byHip.get(chain[i]);
@@ -200,7 +200,7 @@ function measuredStarPosition(s,years=0){
 // Only the rendered AU positions are compressed; measurements/ephemerides remain in physical AU.
 // This monotonic radial map separates inner planets on small screens without shifting orbital angles.
 function solarVisualPos(au){const v=vecFromEcl(au),r=v.length();if(r>0)v.multiplyScalar(9*Math.log1p(r)/r);return v;}
-function clearRoot(){if(!root)return;scene.remove(root);root.traverse(obj=>{if(obj.geometry)obj.geometry.dispose();if(obj.material){(Array.isArray(obj.material)?obj.material:[obj.material]).forEach(m=>m.dispose?.());}});root=new THREE.Group();scene.add(root);objects=[];markers=[];wellGroup=null;lookbackShell=null;universeWeb=null;labelHost.innerHTML='';}
+function clearRoot(){if(!root)return;scene.remove(root);root.traverse(obj=>{if(obj.geometry)obj.geometry.dispose();if(obj.material){(Array.isArray(obj.material)?obj.material:[obj.material]).forEach(m=>m.dispose?.());}});root=new THREE.Group();scene.add(root);objects=[];markers=[];wellGroup=null;lookbackShell=null;universeWeb=null;catalogPoints=null;labelHost.innerHTML='';}
 function addSphere(name,pos,r,color,kind='other',glow=false){const geo=new THREE.SphereGeometry(r,22,16),mat=new THREE.MeshStandardMaterial({color,emissive:glow?color:0x000000,emissiveIntensity:glow?.3:0,roughness:.72});const mesh=new THREE.Mesh(geo,mat);mesh.position.copy(pos);mesh.userData={name,kind};root.add(mesh);objects.push(mesh);markers.push({mesh,name});return mesh;}
 function line(points,color=0x6381a1,opacity=.3){const geo=new THREE.BufferGeometry().setFromPoints(points);const mesh=new THREE.Line(geo,new THREE.LineBasicMaterial({color,transparent:true,opacity}));root.add(mesh);return mesh;}
 function addGrid(size=80){const grid=new THREE.GridHelper(size,20,0x254968,0x1a3c54);grid.position.y=-.2;root.add(grid)}
@@ -341,7 +341,17 @@ function choose(name){state.selected=name;if(state.mode==='blackhole')build();el
 function metric(k,v){return `<div class="metric"><div class="k">${k}</div><div class="v">${v}</div></div>`;}
 function years(v){return f(v/365.25,2)+' y';}
 function updateDetails(){const n=state.selected;el('selectedName').textContent=n;let met='',desc='',eq='',evidence='',kind='SOURCE & STATUS';
-if(state.mode==='solar'){
+if((state.mode==='local'||state.mode==='milky')&&n.startsWith('HIP ')&&constellationCatalog){
+ const hip=Number(n.slice(4)),d=constellationCatalog.stars.find(q=>q[0]===hip);
+ if(d){
+  el('selectedName').textContent=(d[6]?d[6]+' · ':'')+'HIP '+hip;
+  desc='Star plotted from a J2000 ICRS sky direction and cross-matched distance estimate, not a dynamically propagated 2026 position. The size of the rendered point does not represent stellar radius.';
+  met=metric('HIP identifier',hip)+metric('Distance from Sun',f(d[3]*LY_PER_PC,2)+' ly')+metric('Distance',f(d[3],2)+' pc')+metric('Right ascension',f(d[1],5)+' h')+metric('Declination',f(d[2],5)+'°')+metric('Apparent magnitude',f(d[4],2))+metric('Color index B−V',d[5]===null?'not supplied':f(d[5],3));
+  eq='<p>Cartesian position = distance × (cos δ cos α, sin δ, cos δ sin α). The Milky Way view rotates these observer-based coordinates into Galactic axes and translates them to an approximate galactic-center origin. Distance uncertainty and stellar motion are not yet propagated.</p>';
+  evidence='Star coordinates and apparent magnitudes originate from HYG-based bright-star catalogues, with HIP-based distance crossmatch. The original release/epoch and share-alike terms are recorded in <a href="data/CONSTELLATION_CREDITS.md" target="_blank" rel="noopener">the constellation data notes</a>. Missing 3D velocity is not assumed zero.';
+  kind='CATALOGUED STAR · ESTIMATED DISTANCE · J2000 STATIC';
+ }
+}else if(state.mode==='solar'){
 const x=n==='Sun'?null:hermite(n,state.day);const p=PLANETS.find(q=>q.name===n);const pos=x?Math.hypot(...x.pos):0;const speed=x?Math.hypot(...x.vel)*AU_KM/DAY_S:0;const m=dMS(n),rs=2*G*m/C**2, rBody=n==='Sun'?696340000:(n==='Earth'?6371000:(n==='Jupiter'?69911000:NaN));kind='CALCULATED FROM SAMPLED EPHEMERIS';
 desc=n==='Sun'?'Sun at the heliocentric origin. The solar sheet below is an idealized Schwarzschild spatial embedding with the vertical axis exaggerated ×700, since real curvature over astronomical-unit distances is nearly invisible at this scale.':`${n} heliocentric position and velocity are interpolated from sampled Swiss Ephemeris Moshier coordinates; they are not outputs of this app solving Einstein’s field equations.`;
 met=metric('Heliocentric distance',x?f(pos,6)+' AU':'Origin')+metric('Orbital speed',x?f(speed,3)+' km/s':'—')+metric('Object mass',fmtSci(m)+' kg')+metric('Gravitational length GM/c²',f(G*m/C**2/1000,6)+' km');
@@ -407,7 +417,13 @@ const resize=()=>{const w=Math.max(1,stage.clientWidth),h=Math.max(1,stage.clien
 const canvas=renderer.domElement;let drags=new Map(),pinchPrev=0;
 canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);drags.set(e.pointerId,{x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY});state.moved=false;if(drags.size===2){const a=[...drags.values()];pinchPrev=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);}});
 canvas.addEventListener('pointermove',e=>{const d=drags.get(e.pointerId);if(!d)return;let dx=e.clientX-d.x,dy=e.clientY-d.y;d.x=e.clientX;d.y=e.clientY;state.moved=state.moved||Math.abs(e.clientX-d.sx)+Math.abs(e.clientY-d.sy)>5;if(drags.size===2){const a=[...drags.values()],dist=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);if(pinchPrev>0){state.distance*=pinchPrev/Math.max(.01,dist);state.distance=Math.max(3,Math.min(80000,state.distance));}pinchPrev=dist;}else{state.phi-=dx*.006;state.theta-=dy*.006; }updateCamera();});
-canvas.addEventListener('pointerup',e=>{if(!state.moved&&drags.size===1){const rect=canvas.getBoundingClientRect();const mouse=new T.Vector2((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1),ray=new T.Raycaster();ray.setFromCamera(mouse,camera);const hits=ray.intersectObjects(objects);if(hits.length)choose(hits[0].object.userData.name);}drags.delete(e.pointerId);pinchPrev=0;});canvas.addEventListener('pointercancel',e=>{drags.delete(e.pointerId);pinchPrev=0});
+canvas.addEventListener('pointerup',e=>{if(!state.moved&&drags.size===1){const rect=canvas.getBoundingClientRect();const mouse=new T.Vector2((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1),ray=new T.Raycaster();ray.setFromCamera(mouse,camera);const hits=ray.intersectObjects(objects);
+ray.params.Points.threshold=state.mode==='milky'?.1:2.0;
+const stellar=catalogPoints&&state.showConstellations?ray.intersectObject(catalogPoints,false):[];
+if(stellar.length&&(!hits.length||stellar[0].distance<hits[0].distance)){
+ const d=constellationCatalog.stars[stellar[0].index];
+ if(d){choose('HIP '+d[0]);state.target.copy(catalogStarPosition(d));updateCamera();}
+}else if(hits.length)choose(hits[0].object.userData.name);}drags.delete(e.pointerId);pinchPrev=0;});canvas.addEventListener('pointercancel',e=>{drags.delete(e.pointerId);pinchPrev=0});
 canvas.addEventListener('wheel',e=>{e.preventDefault();state.distance*=Math.exp(e.deltaY*.0011);state.distance=Math.max(3,Math.min(80000,state.distance));updateCamera()},{passive:false});
 el('resetButton').addEventListener('click',()=>{resetCamera();applyBandCamera()});el('topButton').addEventListener('click',()=>{state.theta=.15;updateCamera()});el('scaleSlider').addEventListener('input',e=>{setScale(Number(e.target.value));});el('dateSlider').addEventListener('input',e=>{state.playing=false;el('playPause').textContent='▶ Play';const value=Number(e.target.value);const r=TIME_RANGES[state.mode];if(r){if(r.unit==='days'){state.day=value;state.timeYears=value/365.25;}else{state.timeYears=value;state.day=Math.max(0,Math.min(1826,value*365.25));}el('dateLabel').textContent=timeLabel();updateTimePositions();updateDetails();}});el('playPause').addEventListener('click',()=>{state.playing=!state.playing;el('playPause').textContent=state.playing?'Ⅱ Pause':'▶ Play'});el('speed').addEventListener('change',e=>state.speed=Number(e.target.value));el('showTracks').addEventListener('change',e=>{state.tracks=e.target.checked;build()});el('showWell').addEventListener('change',e=>{state.well=e.target.checked;build()});el('showLabels').addEventListener('change',e=>{state.labels=e.target.checked;refreshLabels()});el('spinSlider').addEventListener('input',e=>{state.spin=Number(e.target.value);el('spinValue').textContent=state.spin.toFixed(2);if(state.mode==='blackhole')build()});el('showConstellations').addEventListener('change',e=>{state.showConstellations=e.target.checked;build()});el('constellationSelect').addEventListener('change',e=>{state.selectedFigure=e.target.value;build()});el('trueDepth').addEventListener('change',e=>{state.trueDepth=e.target.checked;build()});
 function frame(ms){const dt=clockPrev?Math.min(.1,(ms-clockPrev)/1000):0;clockPrev=ms;if(state.playing&&TIME_RANGES[state.mode]){advanceTime(dt*state.speed);if(ms-lastInfo>220){updateDetails();lastInfo=ms;}}if(ms-lastLabels>80){refreshLabels();lastLabels=ms;}renderer.render(scene,camera);requestAnimationFrame(frame);}requestAnimationFrame(frame);loadConstellationCatalog();
