@@ -2,7 +2,7 @@
 
 **As-of:** 2026-10-24 (America/Chicago)  
 **Scope:** sources for observable positions, velocities, physical size, mass estimates, planets, small bodies, diffuse matter, Galactic-center kinematics, and a later gravity-model comparison.  
-**Status:** This is a **source inventory**, not evidence that any full catalog has been ingested. Published v3 still contains a small manually entered sample plus illustrative data. URLs point to source authorities and documentation checked on 2026-10-24.
+**Status updated 2026-10-25:** This is a **source inventory** with one actually ingested provider: **NASA Exoplanet Archive PSCompPars, 6,451 confirmed exoplanets / 4,847 host systems** (last check recorded in `data/exoplanet-sync-status.json`). The Gaia-scale comprehensive star census, and most other datasets below, are still **not ingested**. The viewer's 7,922 bright-sky stars are not a complete stellar survey. Links below identify source authorities; not all have been queried.
 
 ## Research standard
 
@@ -52,7 +52,7 @@ The input ideally contains `source_id, ra_deg, dec_deg, distance_pc, pmra_mas_yr
 
 - **Inventory documented**: all sources listed above identified from official documentation or linked publications.
 - **Not yet completed**: the bulk source downloads, catalog crossmatches, large-scale 3D position catalogs, full mass census, integrated Milky Way dynamics, or a measured missing-mass conclusion.
-- **First implement**: a capped Gaia DR3 6D query; transform to Galactocentric positions and velocities with recorded settings; separately query NASA Exoplanet Archive for host/planet physical parameters.
+- **Implemented 2026-10-25**: the [complete confirmed-planet composite snapshot](exoplanet-systems.json) from NASA PSCompPars, with [status](exoplanet-sync-status.json), a [Python import script](../scripts/sync_exoplanets.py) and daily GitHub Action. NASA's confirmed hosts are not limited to constellation stars. **Still to implement**: scalable Gaia DR3 full-star searches/tiles, a capped quality-controlled 6D transform to Galactocentric axes and canonical crossmatches. See [the all-star scope](../docs/STAR_SYSTEM_SCOPE.md).
 - **Next**: GALAH/APOGEE/LAMOST RV/radius/mass crossmatch; gas/dust maps with distance uncertainty; JPL/MPC/NEOWISE physical bodies; gravity model comparison using the same immutable observational input.
 - **Browser**: load a curated compressed subset (not raw Gaia's ~10 TB). Keep massive research/catalog extraction as an offline pipeline.
 
