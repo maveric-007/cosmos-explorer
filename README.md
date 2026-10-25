@@ -16,13 +16,21 @@ An interactive 3D astronomy exploration application for Safari and desktop brows
 ## Publish with GitHub Pages
 
 1. Create a **public** GitHub repository named `cosmos-explorer` under `maveric-007`. Initialize it with a README so that the `main` branch exists.
-2. The published root `index.html` is Cosmos Explorer **v3.1** with independent space/time controls, a cosmology-calculated observer-centred past light cone, and an optional 7,922-star/88-constellation data layer.
+2. The published root `index.html` is Cosmos Explorer **v3.2** with scale/time controls, a calculated cosmological light cone, a 7,922-star bright-sky layer, and a **searchable complete NASA confirmed planetary-system index** independent of constellations.
 3. In the repository open **Settings → Pages** and select **Source: Deploy from a branch**, **Branch: main**, **Folder: /(root)**; click **Save**.
 4. After GitHub reports publication, open `https://maveric-007.github.io/cosmos-explorer/` in Safari.
 
 No build process or server is required. Internet access is needed to load Three.js from the jsDelivr CDN.
 
-## v3 navigation and status
+## All known planetary systems — v3.2
+
+- The entire ingested [NASA Exoplanet Archive PSCompPars confirmed-planet catalog](data/exoplanet-systems.json) includes **6,451 confirmed planets grouped into 4,847 host systems** as checked **2026-10-25** (4,819 with 3D host positions; 5,956 with supplied semimajor axis). This is **not** a subset of constellation stars. All loaded host systems and planet names can be searched from the *Planetary-system search* control anywhere in the app, and explored in the separate **Planetary systems** 3D view.
+- Plotted markers in Nearby stars/Milky Way are distance-capped for screen legibility, **but search covers every host**, including stars outside those views and hosts missing a 3D distance. The 88 Western constellation outlines are optional; they no longer turn the base 7,922-star map on/off.
+- Orbital semimajor axes and masses/radii are NASA composite **observations and model estimates**; an orbit inferred from period + host-star mass is labelled **derived**. Planet positions and orbit-plane orientation are illustrative because most systems lack full epoch-matched 6D orbit ephemerides. Missing orbital distances result in a listed planet without a fictitious orbital path. Multi-star host systems are not inaccurately expanded into separately animated companions.
+- The first successful GitHub Actions import generated [catalog refresh status](data/exoplanet-sync-status.json): **last checked** and **last imported** are separate fields; source's publication epoch is unknown from this extraction. A [daily GitHub Action](.github/workflows/exoplanets.yml) now checks *NASA only* using [the validated importer](scripts/sync_exoplanets.py); other astronomical sources do not yet refresh automatically.
+- The full **all-star/catalog-coverage requirement** and next Gaia-scale ingestion phases are in [STAR_SYSTEM_SCOPE.md](docs/STAR_SYSTEM_SCOPE.md). The application is **not yet a full Gaia stellar database**. Catalogued ≠ all stars physically existing, and “no confirmed planets” ≠ no planets exist.
+
+## v3.2 navigation and status
 
 - **Space scale**: A logarithmic-style, level-of-detail slider steps through solar system → nearby stars → Milky Way → nearby galaxies → observable universe. Camera zoom varies smoothly **within** each band, but crossing a band boundary switches representations; it is **not** a mathematically seamless single-coordinate-scale universe yet. Black-hole spacetime remains a **separate physics mode** reached with its button.
 - **Time/epoch**: Solar system 2026-10-24 through 2031-10-24 from bundled Swiss Ephemeris; three nearby stars ±20,000 years with linear propagation; Milky Way ±230 million years with a schematic circular solar orbit; nearby galaxies ±1 billion years with a radial-only Andromeda scenario. Observable universe now shows a numerically integrated, model-dependent flat ΛCDM **past light cone** for 0 to ~13.791 Gyr lookback; the shell radius is **comoving distance**, not a linear time fraction, and is not a time-evolving 3D universe survey. Black-hole spacetime is a stationary idealized physics view.
@@ -36,9 +44,14 @@ The planetary positions in this version are Swiss Ephemeris 2.10.03 / Moshier co
 
 ## Rendering notes
 
-Solar-system positions and velocities are calculated from the bundled ephemerides in physical AU. The 3D **rendering** uses a monotonic logarithmic distance transform (`9 × ln(1 + r/AU)` scene units) to separate inner planets on small screens; this does not alter measured positions in the object details. Orbital trajectories and moving planets use the same transform. Sun/planet radii remain illustrative, not physically to scale. Nearby-star labels are prioritized and hidden when they collide; some labels may not appear until the camera changes. On iPhone, playback controls sit immediately beneath the scene. The v3.1 scale and time sliders are implemented as a first usable, explicitly mixed-fidelity prototype; a fully continuous all-scale metric transform, full Gaia ingestion, validated physical stellar orbits, a measured cosmic-web map, and all-scale metric transitions remain future work.
+Solar-system positions and velocities are calculated from the bundled ephemerides in physical AU. The 3D **rendering** uses a monotonic logarithmic distance transform (`9 × ln(1 + r/AU)` scene units) to separate inner planets on small screens; this does not alter measured positions in the object details. Orbital trajectories and moving planets use the same transform. Sun/planet radii remain illustrative, not physically to scale. Nearby-star labels are prioritized and hidden when they collide; some labels may not appear until the camera changes. On iPhone, playback controls sit immediately beneath the scene. The v3.2 scale and time sliders are implemented as a first usable, explicitly mixed-fidelity prototype; a fully continuous all-scale metric transform, full Gaia ingestion, validated physical stellar orbits, a measured cosmic-web map, and all-scale metric transitions remain future work.
 
 ## Deployment check
+
+- [ ] Open the Planetary-system search, enter a NASA host such as TRAPPIST-1 and also a host **not** in the 88 figures, and select Explore system. All NASA systems must remain searchable even when not shown in the current zoomed scene.
+- [ ] Verify the importer output totals against `data/exoplanet-sync-status.json` and check an unknown orbit stays unplotted, with the planet retained in detail lists.
+- [ ] In Nearby stars and Milky Way, click catalogued host markers to enter their systems; constellation outlines should be independently toggleable without losing the base star points.
+- [ ] Verify the three-dimensional planetary geometry is flagged illustrative rather than a measured 2026 ephemeris.
 
 - For Nearby stars, verify the figure selector lists 88 constellation names; sky projection shows recognizable outlines and True 3D toggles line segments to physically estimated stellar depths.
 - For Milky Way, catalogued stars should cluster near the Sun rather than forming an artificial outer galactic shell.
