@@ -1,6 +1,6 @@
 # Astronomical Data Refresh and Provenance Protocol
 
-**Designed 2026-10-24. Implementation status: DOCUMENTED, NOT SCHEDULED OR RUNNING.** No claim of complete source ingestion, automated polling, data verification, or new publication until logs and runs exist.
+**Designed 2026-10-24; partially operational 2026-10-25.** NASA Exoplanet Archive PSCompPars is now checked on a **daily GitHub Actions schedule**, using a validated source fetch and versioned compact snapshot. **All other listed surveys remain inventory-only unless individually verified otherwise.** No claim of full Gaia, stellar/ISM/galaxy ingestion, or scientifically validated gravity simulation.
 
 ## Why a daily check, not a daily full re-download
 
@@ -37,9 +37,27 @@ Keep **three dates visibly separate**: `last_checked_at`, `published_at` for the
 - **Avoid conflating “last checked” with “last published”:** a 2026-10-24 ping cannot make a Gaia 2022/2023 released data record into a 2026 observation.
 - **No overwriting successful data on a transient upstream error.** Log monitoring failures distinctly from unchanged sources.
 - **No bare network claims:** store response metadata, access time, source location, checksum or version ID; note service without accessible automated metadata.
-- **No scheduled job exists in this repository as of 2026-10-24.** Designing this flow does not create or authorize ChatGPT scheduled reminders or other service triggers; explicitly choose GitHub Actions / external ingestion job and its secrets/data footprint before enabling.
+- **Active NASA schedule from 2026-10-25**: `.github/workflows/exoplanets.yml`, daily at 06:17 UTC with manual dispatch. It fetches all confirmed PSCompPars planet rows, tests invariant checks, keeps failed fetches from replacing previous data, and records SHA256 and timestamps separately. The NASA TAP export does not provide an authoritative publisher release date in the current query, so it remains **not supplied**. Other inventory sources still have **no enabled polling**. A GitHub Actions bot commit may not retrigger Pages; the viewer loads the latest raw GitHub catalog first, then falls back to the Pages-local snapshot.
 
-## Status table template (NOT actual completed checks)
+## Verified first run — NASA only (2026-10-25)
+
+The actual [GitHub Actions run](https://github.com/maveric-007/cosmos-explorer/actions/runs/40211923343) succeeded; archived status is [data/exoplanet-sync-status.json](../data/exoplanet-sync-status.json).
+
+| Field | Recorded value |
+|---|---|
+| Check/import UTC | **2026-10-25T16:29:39Z** |
+| Dataset | NASA Exoplanet Archive `pscomppars` confirmed composite |
+| Confirmed planet rows | **6,451** |
+| Host systems | **4,847** |
+| Host systems with usable 3D sky position and distance | **4,819** |
+| Planets with archive semimajor-axis value | **5,956** |
+| Publisher release time | **Unknown from TAP export** |
+| Source CSV SHA256 | `08cd41275386ba350d63ffc7586e278e59ac1797c9d73b962b2282bd858d604a` |
+| Normalized output SHA256 | `765b2ddba581f0639a945194ee68d23cfc6fc7cef8b3ce23c5da68a621df2b3f` |
+
+This is one real successful provider check and does not imply historical observations were taken in 2026.
+
+## Other sources (not yet automatically checked)
 
 | Source | Last checked | Publisher release | Latest imported release | Status |
 |---|---|---|---|---|
