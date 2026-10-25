@@ -174,8 +174,9 @@ def test():
     w.writerow(row("Other Host","Other Host b",sy_dist="",pl_rade="1.2"))
     data=normalize(buf.getvalue(),min_count=3)
     assert data["counts"]=={"confirmed_planets":3,"host_systems":2,"located_hosts_3d":1,"planets_with_semimajor_axis":1}
-    assert data["systems"][0]["planets"][1]["a_au"] is None
-    assert data["systems"][1]["distance_pc"] is None
+    hosts = {host["name"]: host for host in data["systems"]}
+    assert hosts["System A"]["planets"][1]["a_au"] is None
+    assert hosts["Other Host"]["distance_pc"] is None
     try:
         normalize(buf.getvalue(),min_count=5)
         raise AssertionError("minimum-row guard did not reject source")
