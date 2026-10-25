@@ -236,6 +236,7 @@ for(const g of GALS){const pos=galaxyPosition(g);let rad=g.name==='Milky Way'?3:
 // PSCompPars archive snapshots include ALL recorded confirmed planetary hosts,
 // irrespective of constellation/bright-star membership. Never invent host distance.
 function currentSystem(){return exoplanetCatalog?.systems.find(s=>s.name===state.systemName)||null;}
+const escapeHTML=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function orbitData(p,s){
  if(p.a_au>0)return {a:p.a_au,inferred:false};
  if(p.period_days>0&&s.stellar_mass_solar>0)
@@ -272,7 +273,7 @@ function buildHostOverlay(){
 }
 function visualSystemPosition(au){
  const r=Math.hypot(au[0],au[1]);if(!r)return new THREE.Vector3(0,0,0);
- const d=13*Math.log1p(r);
+ const d=4+14*Math.log1p(r); // Separate close-in planets from exaggerated host-star radius
  return new THREE.Vector3(au[0]*d/r,0,au[1]*d/r);
 }
 function buildPlanetarySystem(){
@@ -450,16 +451,16 @@ function years(v){return f(v/365.25,2)+' y';}
 function updateDetails(){const n=state.selected;el('selectedName').textContent=n;let met='',desc='',eq='',evidence='',kind='SOURCE & STATUS';
 if(state.mode==='system'){
  const system=currentSystem(),planet=system?.planets.find(p=>p.name===n);
- if(!system){desc='No validated exoplanet catalog has been loaded yet. Try again after the data publication job completes.';kind='CATALOG PENDING';}
+ if(!system){desc=exoplanetCatalog?'Choose any catalogued host from Planetary-system search to inspect its known planets.':'The NASA host catalog has not loaded. Please retry after its data file is available.';kind=exoplanetCatalog?'CHOOSE HOST':'CATALOG PENDING';}
  else if(planet){
   const orbit=orbitData(planet,system);
-  desc=planet.name+' is a catalogued confirmed exoplanet in the '+system.name+' system. '+(planet.controversial?'Its confirmation has been disputed in published literature. ':'')+'Planetary orbits are drawn face-on with an arbitrary phase and are NOT predicted sky positions.';
+  desc=escapeHTML(planet.name)+' is a catalogued confirmed exoplanet in the '+escapeHTML(system.name)+' system. '+(planet.controversial?'Its confirmation has been disputed in published literature. ':'')+'Planetary orbits are drawn face-on with an arbitrary phase and are NOT predicted sky positions.';
   met=metric('Orbit semimajor axis',orbit?f(orbit.a,5)+' AU '+(orbit.inferred?'(Kepler-derived)':'(archive composite)'):'Not published')+metric('Orbital period',planet.period_days==null?'Not published':f(planet.period_days,4)+' days')+metric('Estimated planet mass',planet.mass_earth==null?'Not available':f(planet.mass_earth,3)+' Earth masses')+metric('Estimated radius',planet.radius_earth==null?'Not available':f(planet.radius_earth,3)+' Earth radii')+metric('Eccentricity',planet.eccentricity==null?'Not published':f(planet.eccentricity,4));
   eq='<p>Where semi-major axis is absent but orbital period and stellar mass are present, the display estimates it from Kepler\u2019s third law: a³ ≈ (M/M☉) × (P/years)² (AU³). This is a derived estimate, not a direct observation. Orbital phases, orientations and dynamically interacting companions are not solved.</p>';
   evidence='NASA Exoplanet Archive PSCompPars (one mixed-reference composite row per confirmed planet). Orbit curves approximate geometry, not JPL/Horizons ephemerides. <a href="https://exoplanetarchive.ipac.caltech.edu/docs/API_PS_columns.html" target="_blank" rel="noopener">Archive parameter definitions</a>. See sync timestamps beneath the star search.';
   kind='CONFIRMED EXOPLANET · COMPOSITE INFERENCES';
  }else{
-  desc=system.name+' is the catalogued host system, not necessarily a single star. The archive reports '+(system.number_of_stars??'an unknown number of')+' stellar components; the preview uses ONE symbolic luminous marker and does not invent positions for unknown companions.';
+  desc=escapeHTML(system.name)+' is the catalogued host system, not necessarily a single star. The archive reports '+(system.number_of_stars??'an unknown number of')+' stellar components; the preview uses ONE symbolic luminous marker and does not invent positions for unknown companions.';
   met=metric('Confirmed planets',system.planets.length)+metric('Reported stars',system.number_of_stars??'Not published')+metric('Distance from Sun',system.distance_pc==null?'Not published':f(system.distance_pc*LY_PER_PC,2)+' ly')+metric('Star mass',system.stellar_mass_solar==null?'Not published':f(system.stellar_mass_solar,3)+' solar masses')+metric('Star radius',system.stellar_radius_solar==null?'Not published':f(system.stellar_radius_solar,3)+' solar radii')+metric('Coordinates',system.ra_deg==null||system.dec_deg==null?'Incomplete':f(system.ra_deg,4)+'° RA, '+f(system.dec_deg,4)+'° Dec');
   eq='<p>A full star–planet N-body model needs each object\u2019s initial position, velocity and mass. Those are not known for many exoplanets. The preview only sketches known/derived orbit dimensions; no missing planet or stellar companion is invented.</p>';
   evidence='NASA Exoplanet Archive PSCompPars. Crossmatching Hipparcos/Gaia IDs can link the host to stellar catalogs, but archive stellar values and composite planet parameters may come from different references.';
