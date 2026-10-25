@@ -36,7 +36,7 @@
 - Compare constrained baryonic-only, baryons+dark halos, and published modified-gravity/dynamics calculations using consistent input and held-out tests. Galaxy curves alone are not sufficient; preserve lensing, cluster, CMB, BBN and Solar System constraints.
 - Do not claim new gravitational law, evidence of universal gravity shielding, or disproven dark matter without independent reproducible discriminating measurements.
 - The Solar System JPL data and cosmology source catalogs are distinct from the **mixed-fidelity, illustrative** layers in [the viewer](../index.html). Do not infer that a catalogue listed here has been ingested or revalidated merely because it is named.
-- Previous session described daily astronomy-source checks, but **this repo contains no enabled ingestion/refresh workflow yet**; the separate [refresh protocol](DATA_REFRESH_PROTOCOL.md) defines the intended integrity checks. Adding a scheduler/action is a separate implementation.
+- **NASA exoplanet hosts are now an ingested searchable dataset**: 6,451 confirmed planets, 4,847 systems on 2026-10-25, with an active daily validated import. See [data status](../data/exoplanet-sync-status.json), [all-star inclusion requirement](../docs/STAR_SYSTEM_SCOPE.md), and [refresh protocol](DATA_REFRESH_PROTOCOL.md). All other source-inventory items require separately verified extraction/check schedules; Gaia-scale all-star catalog is not yet implemented.
 
 ## Next scientifically meaningful step
 
