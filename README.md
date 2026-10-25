@@ -2,6 +2,17 @@
 
 An interactive 3D astronomy exploration application for Safari and desktop browsers.
 
+## Research program — canonical home (2026-10-24)
+
+**[Open the complete research hub](research/README.md)** — personal gravity research, astronomical data sources, original Earth and SPARC studies and executable scripts, migrated from `Home/Projects/Gravity-Research` with **14 matching original Git blob SHAs**.
+
+**[Working Gravity Hypothesis](research/WORKING_HYPOTHESIS.md)** — a clearly labeled **testable, unvalidated hypothesis**: evaluate whether fuller independent inventories of ordinary matter and correctly modeled mass distribution reduce gravitational discrepancies, with head-to-head reference halo and modified-gravity comparisons and explicit falsification criteria.
+
+[Original eleven open questions](research/Gravity-Research/Gravity-Research.md) · [annotated equations](research/Gravity-Research/Gravity-Equations-and-Variable-Reference.md) · [SPARC experiments](research/Gravity-Research/README.md) · [JWST evidence assessment](research/JWST_DARK_MATTER_EVIDENCE.md) · [dataset inventory](data/ASTRONOMICAL_DATASETS.md) · [refresh protocol](research/DATA_REFRESH_PROTOCOL.md) · [migration audit](research/MIGRATION_MANIFEST.md).
+
+**Integrity note:** Previous SPARC calculations are exploratory; the pinned 160-row cross-survey script has an open end-to-end reproduction requirement. The astronomical-source daily check is designed and documented but **not yet running**. Dark matter has **not** been disproved by this research, and the visualization is not a complete 6D gravitational simulation.
+
+
 ## Publish with GitHub Pages
 
 1. Create a **public** GitHub repository named `cosmos-explorer` under `maveric-007`. Initialize it with a README so that the `main` branch exists.
