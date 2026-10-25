@@ -313,12 +313,20 @@ function updateHostSearch(){
 }
 async function loadExoplanetCatalog(){
  try{
-  const res=await fetch('./data/exoplanet-systems.json');
-  if(!res.ok)throw new Error('HTTP '+res.status+'; catalog sync may not have completed');
-  const data=await res.json();
+  const base='https://raw.githubusercontent.com/maveric-007/cosmos-explorer/main/data/';
+  // Raw public GitHub serves new valid snapshots even when a token-written commit
+  // does not trigger a fresh GitHub Pages branch deployment.
+  async function getCatalog(name){
+   const addresses=[base+name+'?date='+Date.now(),'./data/'+name];
+   let last=null;for(const url of addresses){
+    try{const res=await fetch(url,{cache:'no-store'});if(res.ok)return await res.json();last=new Error('HTTP '+res.status);}catch(err){last=err;}
+   }
+   throw last||Error('Archive files unavailable');
+  }
+  const data=await getCatalog('exoplanet-systems.json');
   if(data.schema!=='cosmos-explorer-exoplanets-v1'||!Array.isArray(data.systems)||data.systems.length<1000)throw Error('Unexpected catalog version or row count');
   exoplanetCatalog=data;
-  const status=await fetch('./data/exoplanet-sync-status.json').then(x=>x.ok?x.json():null).catch(()=>null);
+  const status=await getCatalog('exoplanet-sync-status.json').catch(()=>null);
   el('exoplanetStatus').textContent=data.counts.host_systems.toLocaleString()+' catalogued planetary systems · '+data.counts.confirmed_planets.toLocaleString()+' confirmed planets · '+data.counts.located_hosts_3d.toLocaleString()+' hosts with catalogued 3D positions. '+(status?'Last checked: '+status.last_checked_utc+'; last imported: '+status.last_imported_utc+'.':'Publisher record dates vary; no refresh status available.');
   updateHostSearch();
   if(['local','milky','system'].includes(state.mode))build();
