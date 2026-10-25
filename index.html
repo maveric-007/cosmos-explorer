@@ -30,7 +30,7 @@
   <div id="qualityBadge" aria-live="polite">Ephemeris positions · display distances compressed</div>
 </section>
 <div id="constellationTools" class="constellation-tools" hidden aria-label="Constellation layers">
-  <label><input type="checkbox" id="showConstellations" checked> Constellations / bright-star catalogue</label>
+  <label><input type="checkbox" id="showConstellations" checked> Constellation outlines</label>
   <label for="constellationSelect">Figure <select id="constellationSelect"><option value="Ori">Orion (loading…)</option></select></label>
   <label><input type="checkbox" id="trueDepth"> True 3D star distances</label>
   <p id="constellationStatus" class="note" aria-live="polite">Loading stellar catalogue. Sky patterns are a Sun/Earth-view projection; true 3D shows real distance estimates.</p>
@@ -124,7 +124,7 @@ function catalogStarPosition(d,mode=state.mode){
  return new THREE.Vector3(26-gx/1000,gz/1000,gy/1000);
 }
 function buildConstellationOverlay(){
- if(!constellationCatalog||!state.showConstellations||!['local','milky'].includes(state.mode))return;
+ if(!constellationCatalog||!['local','milky'].includes(state.mode))return;
  const catalog=constellationCatalog;
  const xyz=[],rgb=[],byHip=new Map();
  for(const d of catalog.stars){
@@ -137,7 +137,7 @@ function buildConstellationOverlay(){
  g.setAttribute('position',new THREE.Float32BufferAttribute(xyz,3));
  g.setAttribute('color',new THREE.Float32BufferAttribute(rgb,3));
  catalogPoints=new THREE.Points(g,new THREE.PointsMaterial({vertexColors:true,transparent:true,opacity:.88,size:state.mode==='local'?1.6:1.8,sizeAttenuation:false,depthWrite:false}));root.add(catalogPoints);
- const selected=state.selectedFigure==='ALL'?catalog.constellations:catalog.constellations.filter(c=>c[1]===state.selectedFigure),segs=[];
+ const selected=!state.showConstellations?[]:state.selectedFigure==='ALL'?catalog.constellations:catalog.constellations.filter(c=>c[1]===state.selectedFigure),segs=[];
  for(const c of selected)for(const chain of c[2])for(let i=1;i<chain.length;i++){
   const p=byHip.get(chain[i-1]),q=byHip.get(chain[i]);
   if(p&&q)segs.push(p.x,p.y,p.z,q.x,q.y,q.z);
@@ -232,6 +232,103 @@ function galaxyPosition(g){
 function buildGalaxies(){ // Mixed observed galaxy sightlines and schematic placements.
 for(const g of GALS){const pos=galaxyPosition(g);let rad=g.name==='Milky Way'?3:g.name==='M87'?2:1.5;const m=addSphere(g.name,pos,rad,g.c,'galaxy',true);if(g.name==='Andromeda (M31)'||g.name==='Milky Way')addHalo(pos,rad*2,g.c);}
 }
+
+// PSCompPars archive snapshots include ALL recorded confirmed planetary hosts,
+// irrespective of constellation/bright-star membership. Never invent host distance.
+function currentSystem(){return exoplanetCatalog?.systems.find(s=>s.name===state.systemName)||null;}
+function orbitData(p,s){
+ if(p.a_au>0)return {a:p.a_au,inferred:false};
+ if(p.period_days>0&&s.stellar_mass_solar>0)
+  return {a:Math.cbrt(s.stellar_mass_solar*(p.period_days/365.25)**2),inferred:true};
+ return null;
+}
+function hostLocation(s,mode){
+ if(s.ra_deg==null||s.dec_deg==null||!(s.distance_pc>0))return null;
+ return catalogStarPosition([0,s.ra_deg/15,s.dec_deg,s.distance_pc,5,null,null],mode);
+}
+function openHost(name){
+ if(!exoplanetCatalog?.systems.some(s=>s.name===name))return;
+ state.systemName=name;setMode('system');state.selected=name;makeObjectList();updateDetails();
+}
+function findSystemForHip(hip){
+ if(!exoplanetCatalog)return null;
+ return exoplanetCatalog.systems.find(s=>{const m=s.hip_name?.match(/\bHIP\s*(\d+)\b/i);return m&&Number(m[1])===hip;})||null;
+}
+function buildHostOverlay(){
+ if(!exoplanetCatalog||!['local','milky'].includes(state.mode))return;
+ const xyz=[],selected=[];
+ for(const host of exoplanetCatalog.systems){
+  const d=host.distance_pc;
+  // Keep true distances in the Galactic map. Nearby sky projection is clearly flattened.
+  if(!(d>0)||state.mode==='local'&&d*LY_PER_PC>500||state.mode==='milky'&&d*LY_PER_PC>90000)continue;
+  const p=hostLocation(host,state.mode);if(!p)continue;
+  xyz.push(p.x,p.y,p.z);selected.push(host.name);
+ }
+ if(!xyz.length)return;
+ const g=new THREE.BufferGeometry();
+ g.setAttribute('position',new THREE.Float32BufferAttribute(xyz,3));
+ hostPoints=new THREE.Points(g,new THREE.PointsMaterial({color:0x79efd4,transparent:true,opacity:.94,size:3.1,sizeAttenuation:false,depthWrite:false}));
+ hostPointsIndex=selected;root.add(hostPoints);
+}
+function visualSystemPosition(au){
+ const r=Math.hypot(au[0],au[1]);if(!r)return new THREE.Vector3(0,0,0);
+ const d=13*Math.log1p(r);
+ return new THREE.Vector3(au[0]*d/r,0,au[1]*d/r);
+}
+function buildPlanetarySystem(){
+ const sys=currentSystem();
+ if(!sys)return;
+ addSphere(sys.name,new THREE.Vector3(0,0,0),.90,0xffc77b,'star',true);
+ // Star radius and planet radii are heavily exaggerated; positions at arbitrary phases.
+ for(let i=0;i<sys.planets.length;i++){
+  const p=sys.planets[i],info=orbitData(p,sys);
+  if(!info)continue; // Planet retains list/detail; never assign a fake orbit.
+  const e=Math.max(0,Math.min(.94,p.eccentricity??0)),a=info.a,b=a*Math.sqrt(1-e*e);
+  if(state.tracks){
+   const pts=[];for(let j=0;j<=128;j++){
+    const E=j/128*Math.PI*2;pts.push(visualSystemPosition([a*(Math.cos(E)-e),b*Math.sin(E)]));
+   }
+   line(pts,info.inferred?0x577e9d:0x3da0bc,.36);
+  }
+  const phase=((i*1.61803398875)%1)*2*Math.PI;
+  const pos=visualSystemPosition([a*(Math.cos(phase)-e),b*Math.sin(phase)]);
+  const radius=p.radius_earth?Math.max(.20,Math.min(.68,.19+.13*Math.log1p(p.radius_earth))):.26;
+  const ball=addSphere(p.name,pos,radius,0x9bcaf2,'exoplanet',false);
+  ball.userData.orbitInferred=info.inferred;
+ }
+}
+function updateHostSearch(){
+ const box=el('hostMatches');box.innerHTML='';
+ if(!exoplanetCatalog){box.disabled=true;el('openSystem').disabled=true;return;}
+ const q=el('hostSearch').value.trim().toLocaleLowerCase();
+ // Search ALL catalogued host systems and planet names, display at most 60 results.
+ const matched=exoplanetCatalog.systems.filter(s=>!q||s.name.toLowerCase().includes(q)||s.planets.some(p=>p.name.toLowerCase().includes(q))).slice(0,60);
+ for(const sys of matched){
+  const opt=document.createElement('option');opt.value=sys.name;
+  opt.textContent=sys.name+' ('+sys.planets.length+' confirmed)';
+  box.appendChild(opt);
+ }
+ box.disabled=!matched.length;el('openSystem').disabled=!matched.length;
+ if(!matched.length){const o=document.createElement('option');o.textContent='No catalogued match';box.appendChild(o);}
+}
+async function loadExoplanetCatalog(){
+ try{
+  const res=await fetch('./data/exoplanet-systems.json');
+  if(!res.ok)throw new Error('HTTP '+res.status+'; catalog sync may not have completed');
+  const data=await res.json();
+  if(data.schema!=='cosmos-explorer-exoplanets-v1'||!Array.isArray(data.systems)||data.systems.length<1000)throw Error('Unexpected catalog version or row count');
+  exoplanetCatalog=data;
+  const status=await fetch('./data/exoplanet-sync-status.json').then(x=>x.ok?x.json():null).catch(()=>null);
+  el('exoplanetStatus').textContent=data.counts.host_systems.toLocaleString()+' catalogued planetary systems · '+data.counts.confirmed_planets.toLocaleString()+' confirmed planets · '+data.counts.located_hosts_3d.toLocaleString()+' hosts with catalogued 3D positions. '+(status?'Last checked: '+status.last_checked_utc+'; last imported: '+status.last_imported_utc+'.':'Publisher record dates vary; no refresh status available.');
+  updateHostSearch();
+  if(['local','milky','system'].includes(state.mode))build();
+ }catch(err){
+  console.warn('NASA host catalog not available',err);
+  el('exoplanetStatus').textContent='Full NASA exoplanet index is pending or unavailable: '+err.message+'. Constellations and Solar System remain usable.';
+  updateHostSearch();
+ }
+}
+
 function buildUniverse(){
  // Illustrative point cloud within a cosmology-calculated observer-centred comoving light-cone slice.
  // Synthetic points are NOT observations or a mapped galaxy population.
@@ -262,7 +359,7 @@ for(let i=0;i<radial;i++)for(let j=0;j<azimuth;j++){const a=i*(azimuth+1)+j,b=a+
 function buildBH(){const name=state.selected==='M87*'?'M87*':'Sagittarius A*';const s=state.spin;const group=new THREE.Group();root.add(group);wellGroup=group;const mesh=new THREE.Mesh(kerrWell(s),new THREE.MeshStandardMaterial({color:0x3a7595,side:THREE.DoubleSide,transparent:true,opacity:state.well?.65:0,wireframe:true}));group.add(mesh);addSphere(name,new THREE.Vector3(0,-15,0),.8,0xffc57c,'blackhole',true);if(state.tracks){const rp=1+Math.sqrt(1-s*s);const ring=[];for(let j=0;j<=128;j++){let a=2*Math.PI*j/128;ring.push(new THREE.Vector3(rp*Math.cos(a),-14.8,rp*Math.sin(a)));}line(ring,0xffca8a,.8);} }
 function scaleBand(value){return SCALE_BANDS.find(b=>value<b.hi)||SCALE_BANDS[SCALE_BANDS.length-1];}
 function applyBandCamera(){
- if(state.mode==='blackhole')return;
+ if(state.mode==='blackhole'||state.mode==='system')return;
  const b=scaleBand(state.scale),t=Math.max(0,Math.min(1,(state.scale-b.lo)/(b.hi-b.lo)));
  state.distance=b.near*Math.pow(b.far/b.near,t);updateCamera();
 }
@@ -407,6 +504,12 @@ eq=`<div class="formula">Δ = r² − 2r + a*²</div><div class="formula">gᵣ�
 evidence='Kerr solution assumes an isolated, stationary, axisymmetric rotating black hole. Masses are approximate astronomical measurements; spin is a slider scenario, not measured here. The rotating accretion flow, magnetic fields, jet and actual Milky Way gravitational environment are NOT simulated. The time-slice and embedding are coordinate-dependent and cannot represent all spacetime curvature.';kind='RELATIVISTIC EQUATIONS + SPIN SCENARIO';
 }
 el('metrics').innerHTML=met;el('desc').innerHTML=desc;el('equations').innerHTML=eq;el('evidence').innerHTML=evidence;el('sourceType').textContent=kind;
+ const jump=el('inspectSelectedSystem');
+ const hipMatch=n.startsWith('HIP ')?findSystemForHip(Number(n.slice(4))):null;
+ const hostMatch=exoplanetCatalog?.systems.find(x=>x.name.toLowerCase()===n.toLowerCase());
+ const starMatch=hipMatch||hostMatch;
+ jump.hidden=!starMatch||state.mode==='system';
+ jump.dataset.host=starMatch?.name||'';
 }
 function updateSolarPositions(){for(const o of objects){if(o.userData.kind==='planet'){const x=hermite(o.userData.planet,state.day);o.position.copy(solarVisualPos(x.pos));}}}
 function refreshLabels(){
@@ -438,14 +541,21 @@ canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);
 canvas.addEventListener('pointermove',e=>{const d=drags.get(e.pointerId);if(!d)return;let dx=e.clientX-d.x,dy=e.clientY-d.y;d.x=e.clientX;d.y=e.clientY;state.moved=state.moved||Math.abs(e.clientX-d.sx)+Math.abs(e.clientY-d.sy)>5;if(drags.size===2){const a=[...drags.values()],dist=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);if(pinchPrev>0){state.distance*=pinchPrev/Math.max(.01,dist);state.distance=Math.max(3,Math.min(80000,state.distance));}pinchPrev=dist;}else{state.phi-=dx*.006;state.theta-=dy*.006; }updateCamera();});
 canvas.addEventListener('pointerup',e=>{if(!state.moved&&drags.size===1){const rect=canvas.getBoundingClientRect();const mouse=new T.Vector2((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1),ray=new T.Raycaster();ray.setFromCamera(mouse,camera);const hits=ray.intersectObjects(objects);
 ray.params.Points.threshold=state.mode==='milky'?.1:2.0;
-const stellar=catalogPoints&&state.showConstellations?ray.intersectObject(catalogPoints,false):[];
-if(stellar.length&&(!hits.length||stellar[0].distance<hits[0].distance)){
+const stellar=catalogPoints?ray.intersectObject(catalogPoints,false):[];const hosts=hostPoints?ray.intersectObject(hostPoints,false):[];
+if(hosts.length&&(!stellar.length||hosts[0].distance<stellar[0].distance)&&(!hits.length||hosts[0].distance<hits[0].distance)){
+ const name=hostPointsIndex[hosts[0].index];if(name)openHost(name);
+}else if(stellar.length&&(!hits.length||stellar[0].distance<hits[0].distance)){
  const d=constellationCatalog.stars[stellar[0].index];
  if(d){choose('HIP '+d[0]);state.target.copy(catalogStarPosition(d));updateCamera();}
 }else if(hits.length)choose(hits[0].object.userData.name);}drags.delete(e.pointerId);pinchPrev=0;});canvas.addEventListener('pointercancel',e=>{drags.delete(e.pointerId);pinchPrev=0});
 canvas.addEventListener('wheel',e=>{e.preventDefault();state.distance*=Math.exp(e.deltaY*.0011);state.distance=Math.max(3,Math.min(80000,state.distance));updateCamera()},{passive:false});
 el('resetButton').addEventListener('click',()=>{resetCamera();applyBandCamera()});el('topButton').addEventListener('click',()=>{state.theta=.15;updateCamera()});el('scaleSlider').addEventListener('input',e=>{setScale(Number(e.target.value));});el('dateSlider').addEventListener('input',e=>{state.playing=false;el('playPause').textContent='▶ Play';const value=Number(e.target.value);const r=TIME_RANGES[state.mode];if(r){if(r.unit==='days'){state.day=value;state.timeYears=value/365.25;}else{state.timeYears=value;state.day=Math.max(0,Math.min(1826,value*365.25));}el('dateLabel').textContent=timeLabel();updateTimePositions();updateDetails();}});el('playPause').addEventListener('click',()=>{state.playing=!state.playing;el('playPause').textContent=state.playing?'Ⅱ Pause':'▶ Play'});el('speed').addEventListener('change',e=>state.speed=Number(e.target.value));el('showTracks').addEventListener('change',e=>{state.tracks=e.target.checked;build()});el('showWell').addEventListener('change',e=>{state.well=e.target.checked;build()});el('showLabels').addEventListener('change',e=>{state.labels=e.target.checked;refreshLabels()});el('spinSlider').addEventListener('input',e=>{state.spin=Number(e.target.value);el('spinValue').textContent=state.spin.toFixed(2);if(state.mode==='blackhole')build()});el('showConstellations').addEventListener('change',e=>{state.showConstellations=e.target.checked;build()});el('constellationSelect').addEventListener('change',e=>{state.selectedFigure=e.target.value;build()});el('trueDepth').addEventListener('change',e=>{state.trueDepth=e.target.checked;build()});
-function frame(ms){const dt=clockPrev?Math.min(.1,(ms-clockPrev)/1000):0;clockPrev=ms;if(state.playing&&TIME_RANGES[state.mode]){advanceTime(dt*state.speed);if(ms-lastInfo>220){updateDetails();lastInfo=ms;}}if(ms-lastLabels>80){refreshLabels();lastLabels=ms;}renderer.render(scene,camera);requestAnimationFrame(frame);}requestAnimationFrame(frame);loadConstellationCatalog();
+el('hostSearch').addEventListener('input',updateHostSearch);
+el('openSystem').addEventListener('click',()=>openHost(el('hostMatches').value));
+el('hostMatches').addEventListener('change',()=>{el('openSystem').disabled=false;});
+el('hostSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();openHost(el('hostMatches').value);}});
+el('inspectSelectedSystem').addEventListener('click',()=>openHost(el('inspectSelectedSystem').dataset.host));
+function frame(ms){const dt=clockPrev?Math.min(.1,(ms-clockPrev)/1000):0;clockPrev=ms;if(state.playing&&TIME_RANGES[state.mode]){advanceTime(dt*state.speed);if(ms-lastInfo>220){updateDetails();lastInfo=ms;}}if(ms-lastLabels>80){refreshLabels();lastLabels=ms;}renderer.render(scene,camera);requestAnimationFrame(frame);}requestAnimationFrame(frame);loadConstellationCatalog();loadExoplanetCatalog();
 }
 try{const module=await import('https://cdn.jsdelivr.net/npm/three@0.180.0/+esm');boot(module);}catch(err){console.error(err);el('sceneStatus').style.display='block';el('sceneStatus').textContent='Unable to load Three.js. This 3D version needs a browser with internet access. The original offline canvas model remains available separately.';el('desc').textContent='Planet ephemeris data are bundled in the HTML, but 3D rendering requires the Three.js JavaScript module to load.';}
 </script></body></html>
