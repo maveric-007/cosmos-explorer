@@ -59,7 +59,7 @@ Solar-system positions and velocities are calculated from the bundled ephemeride
 - Confirm GitHub Pages serves the separate star-catalog JSON. A failed data fetch must leave the solar-system and other views usable.
 
 - Confirm the site loads and renders on desktop and iPhone Safari.
-- Test all six views (including the observable universe), move both sliders, change time range/playback, select objects, and toggle gravity-well slices.
+- Test all seven views (including the observable universe), move both sliders, change time range/playback, select objects, and toggle gravity-well slices.
 - At the observable-universe scale, verify the lookback shell responds to time; in the nearby-star scale, verify Proxima Centauri, Barnard's Star, and Sirius move while schematic stars are stationary.
 - On iPhone Safari, check controls fit, the timeline remains below the scene, and the scale switch from galaxies to observable universe does not throw a camera error.
 - Confirm Pages is serving the latest `main` commit, and that the browser has network access to jsDelivr.
