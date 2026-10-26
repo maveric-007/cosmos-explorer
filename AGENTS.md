@@ -9,7 +9,7 @@ Dedicated personal research/code repository for the **Cosmos Explorer 3D astrono
 - [Research hub](research/README.md)
 - [Current falsifiable gravity hypothesis](research/WORKING_HYPOTHESIS.md)
 - [Original eleven open research questions](research/Gravity-Research/Gravity-Research.md)
-- [Current open questions O-12–O-14](research/OPEN_QUESTIONS.md) — added quantum energy, conservation-law domain, Newtonian limits, and mass-energy accounting, all unvalidated.
+- [Current open questions O-12–O-15](research/OPEN_QUESTIONS.md) — quantum energy, conservation-law domain, Newtonian limits, mass-energy accounting, and black-hole radiation/information, all unvalidated.
 - [Equations reference](research/Gravity-Research/Gravity-Equations-and-Variable-Reference.md)
 - [Original session/validation blockers](research/Gravity-Research/README.md) — dated historical baseline
 - [Source catalog](data/ASTRONOMICAL_DATASETS.md) and [data-refresh protocol](research/DATA_REFRESH_PROTOCOL.md)
