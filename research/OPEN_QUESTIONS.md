@@ -33,6 +33,16 @@ This is an ongoing addendum to the [eleven original research questions](Gravity-
 
 **Outcome:** Open as a research question. Demonstrated limits of Newtonian approximations should not be mislabeled a novel project discovery.
 
+## O-14 — Mass-energy, the Higgs mechanism, and gravitational response
+
+**Question:** When predicting gravity from a physical system, are the independently measurable contributions from rest mass, binding energy, field energy, pressure, and motion modeled with justified uncertainties, and can any omitted contribution explain a measurable residual?
+
+**Observed foundations:** The Higgs **field** contributes to the rest masses of elementary quarks, charged leptons, and W/Z bosons; the Higgs **boson** is its observed excitation and is not a mechanism that creates gravity. Much of ordinary proton/neutron mass arises from quantum chromodynamics (strong-interaction energy). For a system at rest, its total rest energy and invariant mass obey \\(E_0=Mc^2\\); adding net energy to an isolated system changes its total invariant mass. Einstein gravity couples to stress-energy, not only to rest masses from the Higgs field. Inertial mass and gravitational response are experimentally equivalent to high precision, but this does not itself supply a complete quantum theory of gravity.
+
+**Test:** Take a system with independently measured energy changes, specify its full energy-momentum and uncertainties, and estimate the gravitational signal. Compare predictions to measurements where sensitivity permits; do not assign extra energy simply because constituents are entangled. Distinguish internal binding energy already included in a measured composite mass from any additional proposed component to avoid double-counting.
+
+**Outcome:** Open inventory and precision question; it does not establish an anomalous gravitational effect.
+
 ## Research evidence policy
 
 - Label each entry **observed**, **derived**, **model-dependent inference**, or **hypothesis / untested question**.
