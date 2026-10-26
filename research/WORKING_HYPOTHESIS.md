@@ -10,6 +10,10 @@
 
 This is **a hypothesis about the adequacy of mass inventories and gravitational modeling**, not a claim that dark matter has been disproved, general relativity is wrong, or that a new force has been observed.
 
+## Scope note — quantum foundations and conservation (2026-10-26)
+
+The [new open-questions register](OPEN_QUESTIONS.md) records separately testable questions about entanglement, energy conservation and global versus local conservation, the empirically established limits of Newtonian approximations, and mass-energy accounting. These **do not extend the central hypothesis** without discriminating data. A quantum correlation is not evidence for faster-than-light energy transfer; an unexplained galaxy rotation residual is not evidence that a conservation law fails. For any proposed gravitational correction, quantify the independently measured stress-energy contribution and compare held-out predictions against conventional reference models before making a new claim.
+
 ## Core investigative question
 
 **After accounting for the best independently constrained distribution of ordinary matter and measurement uncertainties, is there statistically significant, reproducible unexplained gravitational behavior? If so, which competing physical explanation predicts independent observations best?**
