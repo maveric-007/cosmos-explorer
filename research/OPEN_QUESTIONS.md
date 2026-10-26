@@ -43,6 +43,32 @@ This is an ongoing addendum to the [eleven original research questions](Gravity-
 
 **Outcome:** Open inventory and precision question; it does not establish an anomalous gravitational effect.
 
+## O-15 — Black-hole radiation, information, and the source of emitted energy
+
+**Raised:** 2026-10-26. **Status:** **OPEN research question; no new black-hole energy or information mechanism established.**
+
+**Main question:** When energy is detected escaping a black-hole environment, how can its physical source be determined independently — inflowing matter, magnetic fields and plasma outside the event horizon, rotational energy extracted through surrounding fields, or the black hole's own mass as predicted for Hawking emission? Where would a measurable corresponding change in mass, spin, or exterior matter-energy inventory appear?
+
+**Linked questions:**
+- Can an observation separate thermal emission from an accretion flow, nonthermal jet emission, gravitational-wave losses, and **predicted** Hawking radiation? What instrument, spectrum, variability, or timing signature would discriminate their origins?
+- What observed or calculable change in the black hole's mass and angular momentum, the accretion flow, and the surrounding environment corresponds to energy carried away? Which contributions remain uncertain or model-dependent?
+- Does any emitted radiation preserve recoverable information about an earlier infalling quantum state? What quantity would be measured to distinguish information preservation from information loss? Avoid treating the mere presence of energy in radiation as proof that it carries the infalling information.
+- In an idealized isolated black hole, how would a mass change predicted from quantum emission be tested, and what independent observational precision would be required? Can laboratory analog experiments actually validate the same phenomenon in astrophysical curved spacetime?
+- How do local stress-energy conservation and any usable asymptotic energy definitions apply to the spacetime used? Do not substitute an assumed global energy law for an independently measured flux.
+
+**Evidence boundary (as of this question):** Electromagnetic radiation from matter **outside** astronomical black-hole horizons and high-energy jet phenomena are observed. Hawking radiation from astrophysical black holes is a strong theoretical prediction, **not a direct astronomical detection**. In the standard semiclassical calculation, the predicted outgoing radiation is associated with quantum fields in the black-hole spacetime, not ordinary photons flying outward through the horizon from the interior. Predicted mass loss is part of the model, not a directly measured evaporation of an astrophysical black hole. Whether and how fine-grained information is recoverable from evaporating-black-hole radiation is not settled by direct experiment.
+
+**Investigation / falsification plan:**
+1. Select a concrete target and distinguish **observable emissions** from derived accretion rate, jet power, black-hole mass/spin, and semiclassical Hawking predictions. Define the system boundary and reference frame.
+2. Identify original measured fluxes, spectra, polarimetry, light curves, distances, and their uncertainties. Use compatible published source models to estimate energy output; do not double-count disk radiation and energy feeding a jet.
+3. Form separate, quantitative, falsifiable predictions for conventional plasma/accretion/rotation processes versus any proposed new emission process. Check whether existing instrumental sensitivity could discriminate them.
+4. For information claims, identify an operationally measurable observable or correlation, a preparable reference state, and an independent protocol capable of testing information recovery. Separate mathematical arguments from astrophysical observation.
+5. Compare uncertainty in inferred mass/spin or energy reservoir with the signal magnitude. Record non-detections, observational limits, and cases where the measurement is simply infeasible; an unknown does not become evidence for an unmeasured mechanism.
+
+**Relationship:** [O-12 energy accounting and entanglement](#o-12--energy-accounting-quantum-entanglement-and-conservation-laws), [O-14 mass-energy and gravity](#o-14--mass-energy-the-higgs-mechanism-and-gravitational-response), [original O-08 quantum gravity](Gravity-Research/Gravity-Research.md), and [working hypothesis](WORKING_HYPOTHESIS.md). This new question does not establish a link between entanglement, black-hole information and galaxy-scale gravitational anomalies.
+
+**Reference starting points:** [NASA — Anatomy of a Black Hole](https://science.nasa.gov/universe/black-holes/anatomy/); [Hawking (1975), Particle Creation by Black Holes](https://doi.org/10.1007/BF02345020). These describe established astronomical emission and a theoretical quantum prediction, respectively, **not a measured detection of Hawking evaporation**.
+
 ## Research evidence policy
 
 - Label each entry **observed**, **derived**, **model-dependent inference**, or **hypothesis / untested question**.
