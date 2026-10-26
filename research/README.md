@@ -5,6 +5,8 @@
 
 ## Begin here
 
+**Current questions (added 2026-10-26):** [O-12–O-14: energy conservation, quantum entanglement, Newtonian-regime limits, and gravitational mass-energy accounting](OPEN_QUESTIONS.md). These are open test-design questions; they do not amend or supersede the original eleven questions or establish a new gravitational theory.
+
 1. **[Working gravity hypothesis and falsification strategy](WORKING_HYPOTHESIS.md)** — central research statement, null/comparator hypotheses, field equations, constraints, and rejection tests.
 2. [Original Gravity Research charter and eleven open questions](Gravity-Research/Gravity-Research.md) — original evidence-led plan, now retained verbatim from Home.
 3. [Gravity Equations and Variable Reference](Gravity-Research/Gravity-Equations-and-Variable-Reference.md) — formulas, terminology, units, assumptions and worked examples.
