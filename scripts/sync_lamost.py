@@ -21,7 +21,7 @@ def tap(sql):
         data=r.read(650001)
         if len(data)>650000:raise ValueError("LAMOST response exceeds bounded sample size")
         txt=data.decode("utf-8-sig")
-    if txt.lstrip().startswith("<"):raise ValueError("LAMOST TAP returned XML/error, not CSV")
+    if txt.lstrip().startswith("<"):raise ValueError("LAMOST TAP returned XML/error, not CSV: "+txt[:800].replace("\n"," "))
     return txt,url
 def parse_csv(raw):
     reader=csv.DictReader(io.StringIO(raw))
