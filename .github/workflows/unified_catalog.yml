@@ -1,0 +1,63 @@
+name: Build unified astronomy observation index
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/build_unified_catalog.py"
+      - ".github/workflows/unified_catalog.yml"
+permissions:
+  contents: write
+concurrency:
+  group: unified-observation-index
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify matching rules and fail-closed source checks
+        run: python scripts/build_unified_catalog.py --self-test
+      - name: Build bounded index from validated source snapshots
+        run: python scripts/build_unified_catalog.py
+      - name: Validate output provenance, counts and unique keys
+        run: |
+          python - <<'PY'
+          import json, hashlib, pathlib
+          p = pathlib.Path("data/unified-observation-index.json")
+          doc = json.loads(p.read_text(encoding="utf-8"))
+          assert doc["schema"] == "cosmos-explorer-unified-observation-index-v1"
+          assert 10000 <= len(doc["records"]) <= 40000
+          assert p.stat().st_size <= 6000000
+          keys = [x["id"] for x in doc["records"]]
+          assert len(keys) == len(set(keys))
+          assert len(keys) == doc["counts"]["indexed_records"]
+          assert sum(doc["counts"]["by_source"].values()) == len(keys)
+          assert len(doc["links"]) == doc["counts"]["published_id_links"]
+          for row in doc["input_manifest"]:
+              b = pathlib.Path(row["file"]).read_bytes()
+              assert hashlib.sha256(b).hexdigest() == row["sha256"]
+          keyset = set(keys)
+          for link in doc["links"]:
+              assert link["from"] in keyset and link["to"] in keyset
+              assert link["basis"] in ("published_gaia_dr3_id", "published_hip_id")
+          print(json.dumps(doc["counts"], indent=2))
+          PY
+      - name: Commit validated lightweight observation index
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/unified-observation-index.json
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "data: generate provenance-checked unified observation index"
+            git fetch origin main
+            git rebase origin/main
+            git push origin HEAD:main
+          fi
