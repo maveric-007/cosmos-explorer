@@ -1,0 +1,47 @@
+name: Mobile 3D layout smoke test
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "index.html"
+      - "scripts/test_mobile_rendering.mjs"
+      - ".github/workflows/mobile_ui.yml"
+permissions:
+  contents: read
+jobs:
+  phone-layout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install browser automation client
+        run: npm install --no-save --no-package-lock playwright-core@1.56.1
+      - name: Check JavaScript module syntax
+        run: |
+          node - <<'JS'
+          const fs = require('fs');
+          const html=fs.readFileSync('index.html','utf8');
+          const match=html.match(/<script type="module">([\s\S]*?)<\/script>/);
+          if(!match)throw Error('Missing main JavaScript module');
+          fs.writeFileSync('/tmp/cosmos-explorer-module.mjs',match[1]);
+          JS
+          node --check /tmp/cosmos-explorer-module.mjs
+      - name: Serve repository as static Pages equivalent
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/cosmos-http.log 2>&1 &
+          echo $! >/tmp/cosmos-http.pid
+      - name: Emulate narrow touch viewports in Chromium
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: node scripts/test_mobile_rendering.mjs
+      - name: Upload mobile screenshots for review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cosmos-mobile-qa
+          path: artifacts/mobile-smoke/
+          if-no-files-found: ignore
+          retention-days: 7
