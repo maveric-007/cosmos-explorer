@@ -119,6 +119,28 @@ def run(registry_path=REGISTRY, status_path=STATUS, nasa_path=NASA):
             else:
                 entry["check_status"] = "adapter_configured_not_imported"
                 entry["method"] = "IRSA TAP adapter pending successful import"
+        elif source["check_method"] in ("lamost", "desi"):
+            audit_name = "lamost_dr12" if source["check_method"] == "lamost" else "desi_dr1"
+            audit_path = BASE / ("data/" + audit_name + "-sync-status.json")
+            expected = "cosmos-explorer-lamost-sync-status-v1" if source["check_method"] == "lamost" else "cosmos-explorer-desi-sync-status-v1"
+            if audit_path.exists():
+                official = json.loads(audit_path.read_text(encoding="utf-8"))
+                if official.get("schema") != expected:
+                    raise ValueError("Invalid catalog import status for " + audit_name)
+                entry.update({
+                    "last_checked_utc": official.get("last_checked_utc"),
+                    "last_successful_check_utc": official.get("last_checked_utc"),
+                    "last_imported_utc": official.get("last_imported_utc"),
+                    "publisher_release_utc": official.get("publisher_release_utc"),
+                    "check_status": official.get("check_status"),
+                    "counts": official.get("counts"),
+                    "method": "Verified bounded catalog import (not full survey)",
+                    "import_state": "bounded_sample_ingested",
+                    "error": None
+                })
+            else:
+                entry["check_status"] = "adapter_configured_not_imported"
+                entry["method"] = "Bounded importer configured; no verified data yet"
         else:
             checked = now_utc()
             outcome = probe(source["official_url"])
