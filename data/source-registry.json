@@ -15,8 +15,8 @@
       "name": "ESA Gaia DR3",
       "category": "stellar",
       "official_url": "https://gea.esac.esa.int/archive/",
-      "check_method": "metadata",
-      "import_state": "not_ingested"
+      "check_method": "gaia",
+      "import_state": "bounded_sample_pipeline"
     },
     {
       "id": "galah_dr4",
