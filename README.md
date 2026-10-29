@@ -60,6 +60,14 @@ A [daily source-audit workflow](.github/workflows/sources.yml) performs bounded 
 
 The Planetary systems view now supports a clearly **illustrative elapsed-day orbital-phase slider** for planets with published periods; an unknown period remains static, and these are not observed epoch positions. Black-hole spacetime is stationary and has no scientific time-evolution model.
 
+### ESA Gaia DR3 — first NASA-pattern second-source importer (2026-10-29)
+
+The new [Gaia adapter](scripts/sync_gaia.py) uses the established NASA import pattern: an official provider API, deterministic bounded query, strict source identifier and value validation, file hashes, atomic replacement, and a separate status/audit JSON. The [Gaia workflow](.github/workflows/gaia.yml) executes offline self-tests before network ingestion and validates output shape/size before committing. It runs weekly and on adapter changes, preserving prior good catalog data when the provider or validation fails.
+
+**Verified run:** [GitHub Actions run 40962102792](https://github.com/maveric-007/cosmos-explorer/actions/runs/40962102792) succeeded on October 29, 2026, importing **1,000 stars** to [data/gaia-sample.json](data/gaia-sample.json). The separate [Gaia sync audit](data/gaia-sync-status.json) records both last check and last successful import as **2026-10-29T21:58:08Z**. The source registry and application sources panel now incorporate these verified Gaia dates.
+
+**Scope limitation:** This is an intentionally restricted Gaia DR3 `random_index` sample, quality filtered for positive parallax, parallax signal-to-noise ≥10, RUWE <1.4 and G magnitude <17. Derived `distance_pc_approx` is a simple high-S/N inverse-parallax *approximation*, not a posterior distance estimate. Retained Gaia reference epoch, proper motion and radial velocity (null if unavailable) must not be mistaken for a dynamic Milky Way orbit. There is not yet a whole-sky tile index, source-ID crossmatch to NASA host systems, or full Gaia ingestion. The Gaia sample is **not yet rendered in the 3D scene**; it is a validated ingestion foundation. `publisher_release_utc` remains unknown from the TAP extraction; do not substitute the 2026 import date for its archival release epoch.
+
 ## Deployment check
 
 - [ ] Open the Planetary-system search, enter a NASA host such as TRAPPIST-1 and also a host **not** in the 88 figures, and select Explore system. All NASA systems must remain searchable even when not shown in the current zoomed scene.
