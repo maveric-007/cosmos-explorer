@@ -1,0 +1,55 @@
+name: Import validated ESA Gaia DR3 sample
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "31 7 * * 0"
+  push:
+    paths:
+      - "scripts/sync_gaia.py"
+      - ".github/workflows/gaia.yml"
+permissions:
+  contents: write
+concurrency:
+  group: gaia-sample-import
+  cancel-in-progress: false
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Offline importer self-test
+        run: python scripts/sync_gaia.py --self-test
+      - name: Download and validate small Gaia DR3 sample
+        run: python scripts/sync_gaia.py
+      - name: Check data size, row uniqueness and timestamps
+        run: |
+          python - <<'PY'
+          import json, pathlib
+          p=pathlib.Path("data/gaia-sample.json")
+          d=json.loads(p.read_text())
+          s=json.loads(pathlib.Path("data/gaia-sync-status.json").read_text())
+          assert d["schema"]=="cosmos-explorer-gaia-sample-v1"
+          assert 25<=d["count"]<=1000 and len(d["stars"])==d["count"]
+          assert len({x["source_id"] for x in d["stars"]})==d["count"]
+          assert p.stat().st_size < 1200000
+          assert s["normalized_sha256"] and s["last_imported_utc"]
+          PY
+      - name: Commit validated sample only
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/gaia-sample.json data/gaia-sync-status.json
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "data: sync bounded validated Gaia DR3 sample"
+            git fetch origin main
+            git rebase origin/main
+            git push origin HEAD:main
+          fi
