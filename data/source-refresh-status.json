@@ -23,17 +23,18 @@
       }
     },
     "gaia_dr3": {
-      "last_checked_utc": null,
-      "last_successful_check_utc": null,
+      "last_checked_utc": "2026-10-29T21:58:08Z",
+      "last_successful_check_utc": "2026-10-29T21:58:08Z",
       "publisher_release_utc": null,
-      "last_imported_utc": null,
+      "last_imported_utc": "2026-10-29T21:58:08Z",
       "last_imported_date": null,
-      "check_status": "not_checked",
-      "import_state": "not_ingested",
-      "method": "metadata",
+      "check_status": "updated",
+      "import_state": "bounded_sample_ingested",
+      "method": "Gaia DR3 quality-filtered validated sample",
       "remote_etag": null,
       "remote_last_modified": null,
-      "error": null
+      "error": null,
+      "count": 1000
     },
     "galah_dr4": {
       "last_checked_utc": null,
