@@ -408,7 +408,7 @@ async function loadSourceAudit(){
  async function getJSON(name){let error=null;for(const url of [dataURL+name,'./data/'+name]){try{const res=await fetch(url,{cache:'no-store'});if(res.ok)return await res.json();error=Error('HTTP '+res.status);}catch(e){error=e;}}throw error||Error('Unable to load '+name);}
  const date=x=>{if(!x)return 'Not verified';const d=new Date(x);return Number.isNaN(d.getTime())?String(x):d.toISOString().slice(0,16).replace('T',' ')+' UTC';};
  try{
-  const [registry,audit,nasa,gaia,allwise,twomass]=await Promise.all([getJSON('source-registry.json'),getJSON('source-refresh-status.json'),getJSON('exoplanet-sync-status.json').catch(()=>null),getJSON('gaia-sync-status.json').catch(()=>null),getJSON('allwise-sync-status.json').catch(()=>null),getJSON('twomass-sync-status.json').catch(()=>null)]);
+  const [registry,audit,nasa,gaia,allwise,twomass,lamost,desi,galah,apogee]=await Promise.all([getJSON('source-registry.json'),getJSON('source-refresh-status.json'),getJSON('exoplanet-sync-status.json').catch(()=>null),getJSON('gaia-sync-status.json').catch(()=>null),getJSON('allwise-sync-status.json').catch(()=>null),getJSON('twomass-sync-status.json').catch(()=>null),getJSON('lamost_dr12-sync-status.json').catch(()=>null),getJSON('desi_dr1-sync-status.json').catch(()=>null),getJSON('galah_dr4-sync-status.json').catch(()=>null),getJSON('apogee_dr17-sync-status.json').catch(()=>null)]);
   if(registry.schema!=='cosmos-explorer-source-registry-v1'||audit.schema!=='cosmos-explorer-source-refresh-status-v1')throw Error('Unexpected source audit version');
   const rows=registry.sources.map(src=>({src,status:{...(audit.sources[src.id]||{})}}));
   if(nasa){const row=rows.find(x=>x.src.id==='nasa_exoplanets');if(row){row.status.last_checked_utc=nasa.last_checked_utc;row.status.last_successful_check_utc=nasa.last_checked_utc;row.status.last_imported_utc=nasa.last_imported_utc;row.status.publisher_release_utc=nasa.publisher_release_utc;row.status.check_status=nasa.check_status;}}
@@ -422,6 +422,21 @@ async function loadSourceAudit(){
    row.status.last_imported_utc=item.last_imported_utc;
    row.status.publisher_release_utc=item.publisher_release_utc;
    row.status.check_status=item.check_status+' (bounded sample: '+item.counts.sample_records+' detections)';
+  }
+  for(const [id,item,expected] of [
+   ['lamost_dr12',lamost,'cosmos-explorer-lamost-sync-status-v1'],
+   ['desi_dr1',desi,'cosmos-explorer-desi-sync-status-v1'],
+   ['galah_dr4',galah,'cosmos-explorer-vizier-survey-status-v1'],
+   ['apogee_dr17',apogee,'cosmos-explorer-vizier-survey-status-v1']
+  ]){
+   if(!item||item.schema!==expected)continue;
+   const row=rows.find(x=>x.src.id===id);
+   if(!row)continue;
+   row.status.last_checked_utc=item.last_checked_utc;
+   row.status.last_successful_check_utc=item.last_checked_utc;
+   row.status.last_imported_utc=item.last_imported_utc;
+   row.status.publisher_release_utc=item.publisher_release_utc;
+   row.status.check_status=item.check_status+' (bounded sample: '+(item.counts?.sample_rows??item.counts?.sample_observations??item.counts?.sample_entries??'?')+' entries)';
   }
   summary.textContent=rows.length+' registered sources; '+rows.filter(x=>x.status.last_successful_check_utc).length+' with a recorded successful check; '+rows.filter(x=>x.status.last_imported_utc||x.status.last_imported_date).length+' with an evidenced import/integration date. Most external sources are metadata monitoring only, not ingested.';
   const table=document.createElement('table'),thead=document.createElement('thead'),headrow=document.createElement('tr');
