@@ -19,6 +19,79 @@
 @media(min-width:641px) and (max-width:980px){.frame{grid-template-rows:auto 570px auto auto auto auto}.right{grid-row:3}.navigation-controls{grid-row:4}.controls{grid-row:5}.footer-note{grid-row:6}}
 .constellation-tools{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:10px 18px;background:#071b2c;color:#d7e8f5;border-top:1px solid #28465d;font-size:13px}.constellation-tools[hidden]{display:none!important}.constellation-tools select{background:#102a42;color:#ecf4fa;border:1px solid #43637e;border-radius:7px;padding:6px;max-width:195px}.constellation-tools .note{flex-basis:100%;color:#a9c9dc;font-size:12px;margin:0}
 .host-tools{background:#0a2034;padding:12px 16px;color:#bcd7e6;border-top:1px solid #234960;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;font-size:13px}.host-tools input,.host-tools select{min-height:35px;background:#0c2a43;color:#f4faff;border:1px solid #3c6684;border-radius:7px;padding:6px;max-width:min(100%,250px)}.host-tools button,.research-action{min-height:35px;background:#21567a;color:white;border:1px solid #65a0c4;border-radius:7px;padding:6px 10px;cursor:pointer}.host-tools button:disabled{opacity:.5;cursor:not-allowed}.host-note{flex-basis:100%;font-size:12px;color:#a0c5d9;line-height:1.45}
+
+/* Responsive viewport fit: explicit rows for every app panel. */
+body{max-width:100%;overflow-x:clip}
+.frame{
+ width:100%;min-width:0;min-height:100vh;min-height:100dvh;height:100vh;height:100dvh;
+ display:grid;
+ grid-template-columns:clamp(190px,16vw,245px) minmax(0,1fr) clamp(270px,23vw,350px);
+ grid-template-rows:auto minmax(280px,1fr) auto auto auto auto auto;
+ grid-template-areas:
+ "header header header"
+ "left stage right"
+ "nav nav nav"
+ "const const const"
+ "hosts hosts hosts"
+ "controls controls controls"
+ "footer footer footer";
+}
+.frame>header{grid-area:header;min-width:0;flex-wrap:wrap}
+.frame>.left{grid-area:left}
+.frame>.stage{grid-area:stage;width:100%;height:100%;min-width:0;min-height:0}
+.frame>.right{grid-area:right}
+.frame>.navigation-controls{grid-area:nav;min-width:0}
+.frame>.constellation-tools{grid-area:const;min-width:0}
+.frame>.host-tools{grid-area:hosts;min-width:0}
+.frame>.controls{grid-area:controls;min-width:0}
+.frame>.footer-note{grid-area:footer;min-width:0}
+.frame>aside{min-height:0;overflow-y:auto;overflow-x:hidden}
+.frame>.host-tools input,.frame>.host-tools select{min-width:0}
+@media(max-width:1100px) and (min-width:761px){
+ .frame{
+  height:auto;
+  grid-template-columns:190px minmax(0,1fr);
+  grid-template-rows:auto clamp(340px,62dvh,750px) repeat(6,auto);
+  grid-template-areas:
+  "header header"
+  "left stage"
+  "nav nav"
+  "const const"
+  "hosts hosts"
+  "controls controls"
+  "right right"
+  "footer footer";
+ }
+ .frame>aside{overflow:visible}
+ .frame>.right{border-left:0;border-top:1px solid var(--line)}
+}
+@media(max-width:760px){
+ .frame{display:flex;flex-direction:column;height:auto;min-height:100vh;min-height:100dvh}
+ .frame>header{order:0;flex:0 0 auto}
+ .frame>.stage{order:1;flex:0 0 auto;height:clamp(250px,56dvh,640px);min-height:0;max-height:none}
+ .frame>.navigation-controls{order:2;padding:10px}
+ .frame>.constellation-tools{order:3;padding:10px;gap:8px}
+ .frame>.host-tools{order:4;padding:10px;gap:8px}
+ .frame>.controls{order:5;padding:10px;gap:8px}
+ .frame>.left{order:6}
+ .frame>.right{order:7}
+ .frame>.footer-note{order:8}
+ .frame>aside{overflow:visible;padding:12px}
+ .frame>.left{border-right:0;border-top:1px solid var(--line)}
+ .frame>.right{border-left:0;border-top:1px solid var(--line)}
+ .frame>.navigation-controls .navrow{grid-template-columns:76px minmax(0,1fr);gap:7px}
+ .frame>.navigation-controls .navrow output{grid-column:2;text-align:left;font-size:11px;overflow-wrap:anywhere}
+ .frame>.navigation-controls .scale-ticks{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));text-align:center;gap:3px;font-size:clamp(8px,1.6vw,10px)}
+ .frame>.navigation-controls .scale-ticks span{overflow-wrap:anywhere}
+ .frame>.host-tools input,.frame>.host-tools select{flex:1 1 160px;max-width:100%;width:100%}
+ .frame>.host-tools button,.frame>.controls button,.frame>.stage .stage-actions button{min-height:40px}
+ .frame>.stage .stage-actions{right:8px;top:8px}
+ .frame>.stage #stageNote{left:8px;right:8px;bottom:8px}
+}
+@media(max-width:760px) and (orientation:landscape) and (max-height:550px){
+ .frame>.stage{height:clamp(220px,70dvh,440px)}
+}
+
 </style></head><body><div class="frame"><header><div><h1>Cosmos Explorer <span style="font-size:12px;color:#92e5f0">v3.2 · 3D</span></h1><p>From measured planetary motion to nearby stellar astrometry, galaxies, the observable horizon and black-hole geometry</p></div><span class="tag">OBSERVED · CALCULATED · ILLUSTRATED</span></header>
 <aside class="left"><h2>Jump to a view</h2><div class="navlist" id="modes"></div><h3>Objects in this view</h3><div class="objects" id="objects"></div><div class="hr"></div><p class="legend">Drag to orbit the camera. Scroll or pinch to zoom. Select an object to inspect its data and mathematical model.</p><p class="legend"><strong>Important:</strong> these are separate physical scales. Solar-system display spacing is compressed nonlinearly while reported AU measurements remain physical. Space scale uses level-of-detail transitions between scenes, with logarithmic zoom within scenes; it is not yet a single physically metric all-scale render.</p></aside>
 <main class="stage" id="stage"><canvas id="scene" aria-label="Interactive three-dimensional space visualization"></canvas><div class="objectlabels" id="objectlabels" aria-hidden="true"></div><div id="sceneStatus" role="status">Loading Three.js renderer…</div><div class="stage-actions"><button type="button" id="topButton">Top view</button><button type="button" id="resetButton">Reset camera</button></div><div id="stageNote">Object sizes exaggerated; distances use the units and visual compression stated for each view.</div></main>
@@ -544,7 +617,7 @@ for(const c of candidates){
 labelHost.innerHTML=out.join('');
 }
 function boot(T){THREE=T;renderer=new T.WebGLRenderer({canvas:el('scene'),antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.setClearColor(0x060c18,1);scene=new T.Scene();camera=new T.PerspectiveCamera(47,1,.01,250000);scene.add(new T.AmbientLight(0xb3d4f0,1.0));const light=new T.PointLight(0xffffff,1200,0,2);light.position.set(0,55,55);scene.add(light);root=new T.Group();scene.add(root);state.target=new T.Vector3();starfield();build();el('scaleSlider').value=String(state.scale);el('scaleReadout').textContent=scaleBand(state.scale).caption;
-const resize=()=>{const w=Math.max(1,stage.clientWidth),h=Math.max(1,stage.clientHeight);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()};new ResizeObserver(resize).observe(stage);resize();el('sceneStatus').textContent='Renderer ready · drag, scroll or pinch to explore';setTimeout(()=>{el('sceneStatus').style.display='none'},2600);
+let lastSceneWidth=0,lastSceneHeight=0;const resize=()=>{const bounds=stage.getBoundingClientRect(),w=Math.max(1,Math.round(bounds.width)),h=Math.max(1,Math.round(bounds.height));if(w===lastSceneWidth&&h===lastSceneHeight)return;lastSceneWidth=w;lastSceneHeight=h;renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,w<=760?1.5:2));renderer.setSize(w,h,false);camera.aspect=w/h;const baseFov=47*Math.PI/180,referenceAspect=16/9;camera.fov=Math.min(100,2*Math.atan(Math.tan(baseFov/2)*Math.max(1,referenceAspect/camera.aspect))*180/Math.PI);camera.updateProjectionMatrix();refreshLabels();};if('ResizeObserver' in window)new ResizeObserver(resize).observe(stage);else window.addEventListener('resize',resize,{passive:true});window.visualViewport?.addEventListener('resize',resize,{passive:true});window.addEventListener('orientationchange',resize,{passive:true});resize();el('sceneStatus').textContent='Renderer ready · drag, scroll or pinch to explore';setTimeout(()=>{el('sceneStatus').style.display='none'},2600);
 const canvas=renderer.domElement;let drags=new Map(),pinchPrev=0;
 canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);drags.set(e.pointerId,{x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY});state.moved=false;if(drags.size===2){const a=[...drags.values()];pinchPrev=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);}});
 canvas.addEventListener('pointermove',e=>{const d=drags.get(e.pointerId);if(!d)return;let dx=e.clientX-d.x,dy=e.clientY-d.y;d.x=e.clientX;d.y=e.clientY;state.moved=state.moved||Math.abs(e.clientX-d.sx)+Math.abs(e.clientY-d.sy)>5;if(drags.size===2){const a=[...drags.values()],dist=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);if(pinchPrev>0){state.distance*=pinchPrev/Math.max(.01,dist);state.distance=Math.max(3,Math.min(80000,state.distance));}pinchPrev=dist;}else{state.phi-=dx*.006;state.theta-=dy*.006; }updateCamera();});
