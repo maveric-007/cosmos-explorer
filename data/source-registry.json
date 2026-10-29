@@ -26,8 +26,8 @@
       "name": "GALAH DR4",
       "category": "stellar",
       "official_url": "https://www.galah-survey.org/dr4/the_catalogues/",
-      "check_method": "metadata",
-      "import_state": "not_ingested",
+      "check_method": "vizier",
+      "import_state": "bounded_sample_configured",
       "published_catalog_count": 917588,
       "count_basis": "unique stars",
       "count_reference": "https://www.galah-survey.org/dr4/overview/"
@@ -37,8 +37,11 @@
       "name": "SDSS APOGEE DR17",
       "category": "stellar",
       "official_url": "https://www.sdss4.org/dr17/irspec/spectro_data/",
-      "check_method": "metadata",
-      "import_state": "not_ingested"
+      "check_method": "vizier",
+      "import_state": "bounded_sample_configured",
+      "published_catalog_count": 733901,
+      "count_basis": "DR17 APOGEE allStar entries (repeat targets possible)",
+      "count_reference": "https://www.sdss4.org/dr17/irspec/spectro_data/"
     },
     {
       "id": "lamost_dr12",
@@ -57,7 +60,7 @@
       "category": "galaxies",
       "official_url": "https://data.desi.lbl.gov/doc/releases/dr1/",
       "check_method": "desi",
-      "import_state": "bounded_sample_configured",
+      "import_state": "bounded_sample_ingested",
       "published_catalog_count": 23060727,
       "count_basis": "DR1 zpix redshift catalog entries (not unique targets)",
       "count_reference": "https://datalab.noirlab.edu/data/desi"
