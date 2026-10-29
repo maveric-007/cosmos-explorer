@@ -1,6 +1,10 @@
 name: Audit astronomy source metadata
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - "scripts/check_sources.py"
+      - ".github/workflows/sources.yml"
   schedule:
     - cron: "43 8 * * *" # UTC, offset from NASA's 06:17 UTC import
 
