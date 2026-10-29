@@ -45,8 +45,8 @@
       "name": "LAMOST DR12",
       "category": "stellar",
       "official_url": "https://www.lamost.org/dr12/",
-      "check_method": "metadata",
-      "import_state": "not_ingested",
+      "check_method": "lamost",
+      "import_state": "bounded_sample_ingested",
       "published_catalog_count": 28074308,
       "count_basis": "released low- and medium-resolution spectra",
       "count_reference": "https://www.lamost.org/dr12/"
@@ -56,8 +56,8 @@
       "name": "DESI DR1",
       "category": "galaxies",
       "official_url": "https://data.desi.lbl.gov/doc/releases/dr1/",
-      "check_method": "metadata",
-      "import_state": "not_ingested",
+      "check_method": "desi",
+      "import_state": "bounded_sample_configured",
       "published_catalog_count": 23060727,
       "count_basis": "DR1 zpix redshift catalog entries (not unique targets)",
       "count_reference": "https://datalab.noirlab.edu/data/desi"
