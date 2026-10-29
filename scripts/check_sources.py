@@ -99,6 +99,26 @@ def run(registry_path=REGISTRY, status_path=STATUS, nasa_path=NASA):
             else:
                 entry["check_status"] = "adapter_configured_not_checked"
                 entry["method"] = "Gaia bounded importer configured but not yet verified"
+        elif source["check_method"] == "irsa":
+            audit_file = BASE / ("data/" + key + "-sync-status.json")
+            if audit_file.exists():
+                official = json.loads(audit_file.read_text(encoding="utf-8"))
+                if official.get("schema") != "cosmos-explorer-irsa-sync-status-v1" or official.get("source_id") != key:
+                    raise ValueError("Invalid source-specific IRSA status for " + key)
+                entry.update({
+                    "last_checked_utc": official.get("last_checked_utc"),
+                    "last_successful_check_utc": official.get("last_checked_utc"),
+                    "last_imported_utc": official.get("last_imported_utc"),
+                    "publisher_release_utc": official.get("publisher_release_utc"),
+                    "check_status": official.get("check_status"),
+                    "counts": official.get("counts"),
+                    "method": "IRSA TAP bounded validated sample import",
+                    "import_state": "bounded_sample_ingested",
+                    "error": None
+                })
+            else:
+                entry["check_status"] = "adapter_configured_not_imported"
+                entry["method"] = "IRSA TAP adapter pending successful import"
         else:
             checked = now_utc()
             outcome = probe(source["official_url"])
