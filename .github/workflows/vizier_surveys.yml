@@ -13,45 +13,85 @@ concurrency:
   group: vizier-survey-import
   cancel-in-progress: false
 jobs:
-  ingest:
+  galah_dr4:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 6
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Offline schema, source ID, duplicate, and checksum tests
+      - name: Verify GALAH and APOGEE importer invariants offline
         run: python scripts/sync_vizier_surveys.py --self-test
-      - name: GALAH DR4 derived catalog before APOGEE DR17
+      - name: Fetch bounded GALAH DR4 derivative sample
         run: python scripts/sync_vizier_surveys.py --source galah_dr4
-      - name: APOGEE DR17 allStar source catalog
-        run: python scripts/sync_vizier_surveys.py --source apogee_dr17
-      - name: Validate two committed source schemas and size limits
+      - name: Verify GALAH output and provenance
         run: |
           python - <<'PY'
-          import json
-          from pathlib import Path
-          for name in ("galah_dr4", "apogee_dr17"):
-              p=Path("data/"+name+"-sample.json")
-              d=json.loads(p.read_text(encoding="utf8"))
-              audit=json.loads(Path("data/"+name+"-sync-status.json").read_text(encoding="utf8"))
-              assert d["schema"]=="cosmos-explorer-vizier-survey-sample-v1"
-              assert 10<=d["counts"]["sample_rows"]<=200
-              assert p.stat().st_size<200000
-              assert len({r["source_row_id"] for r in d["records"]})==d["counts"]["sample_rows"]
-              assert audit["normalized_sha256"] and audit["last_imported_utc"]
-              print(name,d["counts"])
+          import json, pathlib
+          key="galah_dr4"
+          p=pathlib.Path("data/"+key+"-sample.json")
+          d=json.loads(p.read_text())
+          a=json.loads(pathlib.Path("data/"+key+"-sync-status.json").read_text())
+          assert d["schema"]=="cosmos-explorer-vizier-survey-sample-v1"
+          assert d["source_id"]==key
+          assert 10<=len(d["records"])<=200
+          assert len({r["source_row_id"] for r in d["records"]})==len(d["records"])
+          assert p.stat().st_size<200000
+          assert a["normalized_sha256"] and a["last_imported_utc"]
           PY
-      - name: Commit only validated lightweight products
+      - name: Commit validated GALAH sample without waiting for APOGEE
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/galah_dr4-sample.json data/galah_dr4-sync-status.json data/apogee_dr17-sample.json data/apogee_dr17-sync-status.json
+          git add data/galah_dr4-sample.json data/galah_dr4-sync-status.json
           if git diff --cached --quiet; then
-            echo "No changed source snapshots"
+            echo "GALAH unchanged"
           else
-            git commit -m "data: synchronize bounded GALAH and APOGEE validated samples"
+            git commit -m "data: synchronize bounded validated GALAH DR4 sample"
+            git fetch origin main
+            git rebase origin/main
+            git push origin HEAD:main
+          fi
+
+  apogee_dr17:
+    needs: galah_dr4
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify GALAH and APOGEE importer invariants offline
+        run: python scripts/sync_vizier_surveys.py --self-test
+      - name: Fetch bounded APOGEE DR17 allStar sample independently
+        run: python scripts/sync_vizier_surveys.py --source apogee_dr17
+      - name: Verify APOGEE output and provenance
+        run: |
+          python - <<'PY'
+          import json, pathlib
+          key="apogee_dr17"
+          p=pathlib.Path("data/"+key+"-sample.json")
+          d=json.loads(p.read_text())
+          a=json.loads(pathlib.Path("data/"+key+"-sync-status.json").read_text())
+          assert d["schema"]=="cosmos-explorer-vizier-survey-sample-v1"
+          assert d["source_id"]==key
+          assert 10<=len(d["records"])<=200
+          assert len({r["source_row_id"] for r in d["records"]})==len(d["records"])
+          assert p.stat().st_size<200000
+          assert a["normalized_sha256"] and a["last_imported_utc"]
+          PY
+      - name: Commit validated APOGEE sample regardless of GALAH status
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/apogee_dr17-sample.json data/apogee_dr17-sync-status.json
+          if git diff --cached --quiet; then
+            echo "APOGEE unchanged"
+          else
+            git commit -m "data: synchronize bounded validated APOGEE DR17 sample"
             git fetch origin main
             git rebase origin/main
             git push origin HEAD:main
