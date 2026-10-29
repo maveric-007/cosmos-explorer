@@ -52,6 +52,14 @@ Desktop uses a viewport-fitting scene with independently scrollable sidebars; in
 
 Solar-system positions and velocities are calculated from the bundled ephemerides in physical AU. The 3D **rendering** uses a monotonic logarithmic distance transform (`9 × ln(1 + r/AU)` scene units) to separate inner planets on small screens; this does not alter measured positions in the object details. Orbital trajectories and moving planets use the same transform. Sun/planet radii remain illustrative, not physically to scale. Nearby-star labels are prioritized and hidden when they collide; some labels may not appear until the camera changes. On iPhone, playback controls sit immediately beneath the scene. The v3.2 scale and time sliders are implemented as a first usable, explicitly mixed-fidelity prototype; a fully continuous all-scale metric transform, full Gaia ingestion, validated physical stellar orbits, a measured cosmic-web map, and all-scale metric transitions remain future work.
 
+### Per-catalog refresh dates and source checking (2026-10-29)
+
+[Source registry](data/source-registry.json) enumerates **23** individual astronomy catalogs and bundled source providers. [Per-source status](data/source-refresh-status.json) records separate `last_checked_utc`, `last_successful_check_utc`, `last_imported_utc`, and `publisher_release_utc` values; unknown dates stay null. The application shows this table in **Sources and individual refresh dates**. Embedded HYG-derived star and Stellarium figure components have an evidenced 2026-10-24 *integration date*, not an assumed exact UTC timestamp. NASA's [validated PSCompPars import status](data/exoplanet-sync-status.json) remains authoritative for its real import.
+
+A [daily source-audit workflow](.github/workflows/sources.yml) performs bounded HTTP metadata/reachability checks against each registered provider and preserves independent timestamps and failures. HTTP Last-Modified/ETag and successful website reachability do **not** establish a new scientific catalog release or successful download. **Only NASA PSCompPars currently has an automated full import**; Gaia-scale and other bulk catalog import/crossmatch jobs have not yet been implemented. Check and import dates must not be conflated. The first source-audit run must be verified separately before saying all providers were actually checked.
+
+The Planetary systems view now supports a clearly **illustrative elapsed-day orbital-phase slider** for planets with published periods; an unknown period remains static, and these are not observed epoch positions. Black-hole spacetime is stationary and has no scientific time-evolution model.
+
 ## Deployment check
 
 - [ ] Open the Planetary-system search, enter a NASA host such as TRAPPIST-1 and also a host **not** in the 88 figures, and select Explore system. All NASA systems must remain searchable even when not shown in the current zoomed scene.

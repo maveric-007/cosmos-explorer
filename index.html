@@ -92,10 +92,27 @@ body{max-width:100%;overflow-x:clip}
  .frame>.stage{height:clamp(220px,70dvh,440px)}
 }
 
-</style></head><body><div class="frame"><header><div><h1>Cosmos Explorer <span style="font-size:12px;color:#92e5f0">v3.2 · 3D</span></h1><p>From measured planetary motion to nearby stellar astrometry, galaxies, the observable horizon and black-hole geometry</p></div><span class="tag">OBSERVED · CALCULATED · ILLUSTRATED</span></header>
+
+/* Quick navigation, accessible guide, and independently dated catalog audit. */
+.header-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.quick-mode{font-size:12px;color:var(--muted)}
+.quick-mode select{display:block;max-width:100%;background:#10263a;color:var(--txt);border:1px solid #4b7089;padding:7px;border-radius:7px;min-height:38px}
+.quick-help{position:relative;max-width:320px;font-size:12px}
+.quick-help summary{cursor:pointer;padding:7px 10px;border-radius:8px;border:1px solid var(--line)}
+.quick-help p{line-height:1.45;margin:8px 0}
+.source-audit{margin-top:20px;border-top:1px solid var(--line);padding-top:10px;font-size:11px}
+.source-audit summary{cursor:pointer;color:#bcecf7;font-weight:650;padding:7px 0}
+.source-audit p{line-height:1.5;color:var(--muted)}
+.source-audit-scroll{overflow-x:auto;max-height:310px;overflow-y:auto}
+.source-audit table{border-collapse:collapse;width:100%;font-size:10px}
+.source-audit th,.source-audit td{border-bottom:1px solid var(--line);padding:5px 3px;text-align:left;vertical-align:top}
+.source-audit th{position:sticky;top:0;background:var(--p)}
+.source-audit td{overflow-wrap:anywhere}
+@media(max-width:760px){.header-actions{margin-top:9px}.quick-mode{width:100%}.quick-mode select{width:100%}.quick-help{max-width:none}}
+</style></head><body><div class="frame"><header><div><h1>Cosmos Explorer <span style="font-size:12px;color:#92e5f0">v3.2 · 3D</span></h1><p>From measured planetary motion to nearby stellar astrometry, galaxies, the observable horizon and black-hole geometry</p></div><div class="header-actions"><label class="quick-mode" for="quickMode">Jump to view<select id="quickMode" aria-label="Jump directly to a 3D view"><option>Loading views…</option></select></label><details class="quick-help"><summary>How to explore</summary><p>Choose a view, drag or swipe the 3D scene to orbit, and scroll or pinch to zoom. Use Space scale to travel from the Solar System to the observable universe. Time is view-dependent: measured ephemerides, limited estimated motion, or illustrative scenarios are labeled separately. Select an object for its source and limitations.</p></details><span class="tag">OBSERVED · CALCULATED · ILLUSTRATED</span></div></header>
 <aside class="left"><h2>Jump to a view</h2><div class="navlist" id="modes"></div><h3>Objects in this view</h3><div class="objects" id="objects"></div><div class="hr"></div><p class="legend">Drag to orbit the camera. Scroll or pinch to zoom. Select an object to inspect its data and mathematical model.</p><p class="legend"><strong>Important:</strong> these are separate physical scales. Solar-system display spacing is compressed nonlinearly while reported AU measurements remain physical. Space scale uses level-of-detail transitions between scenes, with logarithmic zoom within scenes; it is not yet a single physically metric all-scale render.</p></aside>
 <main class="stage" id="stage"><canvas id="scene" aria-label="Interactive three-dimensional space visualization"></canvas><div class="objectlabels" id="objectlabels" aria-hidden="true"></div><div id="sceneStatus" role="status">Loading Three.js renderer…</div><div class="stage-actions"><button type="button" id="topButton">Top view</button><button type="button" id="resetButton">Reset camera</button></div><div id="stageNote">Object sizes exaggerated; distances use the units and visual compression stated for each view.</div></main>
-<aside class="right"><div class="banner" id="sourceType">MODEL &amp; SOURCE</div><h2 id="selectedName" style="font-size:24px;margin-top:7px">Earth</h2><div class="explainer" id="desc">Loading orbital data…</div><h3>Measurements and calculations</h3><div class="metrics" id="metrics"></div><h3>Physics</h3><div id="equations" class="explainer"></div><section id="spinControl" style="display:none"><h3>Kerr spin parameter — scenario</h3><div class="inputlabel"><label for="spinSlider">Dimensionless spin a*</label><span id="spinValue">0.50</span></div><input id="spinSlider" type="range" min="0" max="0.98" step="0.01" value="0.50"><p class="source">Spin setting is a scenario, <em>not</em> an established measured value for Sagittarius A* or M87*.</p></section><h3>Evidence &amp; limitations</h3><div class="source" id="evidence"></div><button type="button" class="research-action" id="inspectSelectedSystem" hidden>Inspect known planetary system</button></aside>
+<aside class="right"><div class="banner" id="sourceType">MODEL &amp; SOURCE</div><h2 id="selectedName" style="font-size:24px;margin-top:7px">Earth</h2><div class="explainer" id="desc">Loading orbital data…</div><h3>Measurements and calculations</h3><div class="metrics" id="metrics"></div><h3>Physics</h3><div id="equations" class="explainer"></div><section id="spinControl" style="display:none"><h3>Kerr spin parameter — scenario</h3><div class="inputlabel"><label for="spinSlider">Dimensionless spin a*</label><span id="spinValue">0.50</span></div><input id="spinSlider" type="range" min="0" max="0.98" step="0.01" value="0.50"><p class="source">Spin setting is a scenario, <em>not</em> an established measured value for Sagittarius A* or M87*.</p></section><h3>Evidence &amp; limitations</h3><div class="source" id="evidence"></div><button type="button" class="research-action" id="inspectSelectedSystem" hidden>Inspect known planetary system</button><section class="source-audit" aria-label="Individual dataset refresh dates"><details id="sourceAuditDetails"><summary>Sources and individual refresh dates</summary><p id="sourceAuditSummary" aria-live="polite">Loading source registry…</p><div id="sourceAuditList" class="source-audit-scroll"></div><p>Checked = endpoint metadata attempt. Imported = last validated local dataset. Publisher release = authoritative source publication date, if actually known. Checking a website does not import updated scientific data.</p></details></section></aside>
 <section class="navigation-controls" aria-label="Distance and time navigation">
   <div class="navrow"><label for="scaleSlider">Space scale</label><input id="scaleSlider" type="range" min="0" max="100" step="0.1" value="8" aria-label="Explore space from the solar system to the observable universe"><output for="scaleSlider" id="scaleReadout">Solar system · AU</output></div>
   <div class="scale-ticks"><span>Solar system</span><span>Nearby stars</span><span>Milky Way</span><span>Galaxies</span><span>Observable universe</span></div>
@@ -145,7 +162,7 @@ const GALS=[
 ];
 const MODES=[['solar','Solar system','AU · ephemerides'],['local','Nearby stars','ly · sample measured + schematic'],['system','Planetary systems','All confirmed exoplanet hosts · search'],['milky','Milky Way','kly · conceptual galaxy'],['galaxies','Nearby galaxies','Mly · selected distances'],['universe','Observable universe','Gly · horizon, schematic'],['blackhole','Black-hole spacetime','Special relativity/GR viewing mode']];
 const SCALE_BANDS=[{mode:'solar',lo:0,hi:20,near:38,far:165,caption:'Solar system · AU'},{mode:'local',lo:20,hi:40,near:22,far:160,caption:'Nearby stars · light-years'},{mode:'milky',lo:40,hi:58,near:47,far:200,caption:'Milky Way · thousands of ly'},{mode:'galaxies',lo:58,hi:79,near:780,far:10000,caption:'Nearby galaxies · millions of ly'},{mode:'universe',lo:79,hi:100,near:38,far:230,caption:'Observable universe · ~46 billion ly radius'}];
-const TIME_RANGES={solar:{min:0,max:1826,step:.1,unit:'days'},local:{min:-20000,max:20000,step:5,unit:'yr'},milky:{min:-230000000,max:230000000,step:100000,unit:'yr'},galaxies:{min:-1000000000,max:1000000000,step:1000000,unit:'yr'},universe:{min:-13800000000,max:0,step:10000000,unit:'yr'}};
+const TIME_RANGES={solar:{min:0,max:1826,step:.1,unit:'days'},system:{min:0,max:365,step:1,unit:'days'},local:{min:-20000,max:20000,step:5,unit:'yr'},milky:{min:-230000000,max:230000000,step:100000,unit:'yr'},galaxies:{min:-1000000000,max:1000000000,step:1000000,unit:'yr'},universe:{min:-13800000000,max:0,step:10000000,unit:'yr'}};
 const el=id=>document.getElementById(id), stage=el('stage'), labelHost=el('objectlabels');
 const state={mode:'solar',selected:'Earth',day:0,timeYears:0,scale:8,playing:false,speed:10,tracks:true,well:true,labels:true,spin:0.5,phi:.35,theta:1.06,distance:78,target:null,moved:false,showConstellations:true,selectedFigure:'Ori',trueDepth:false,systemName:null};
 let THREE, renderer, scene, camera, root, points=[], objects=[], markers=[], wellGroup, starBG, lookbackShell, universeWeb=null, constellationCatalog=null, catalogPoints=null, exoplanetCatalog=null, hostPoints=null, hostPointsIndex=[], clockPrev=0, lastInfo=0, lastLabels=0;
@@ -364,11 +381,11 @@ function buildPlanetarySystem(){
    }
    line(pts,info.inferred?0x577e9d:0x3da0bc,.36);
   }
-  const phase=((i*1.61803398875)%1)*2*Math.PI;
+  const phase=(((i*1.61803398875)%1)+(p.period_days>0?state.day/p.period_days:0))*2*Math.PI;
   const pos=visualSystemPosition([a*(Math.cos(phase)-e),b*Math.sin(phase)]);
   const radius=p.radius_earth?Math.max(.20,Math.min(.68,.19+.13*Math.log1p(p.radius_earth))):.26;
   const ball=addSphere(p.name,pos,radius,0x9bcaf2,'exoplanet',false);
-  ball.userData.orbitInferred=info.inferred;
+  ball.userData.orbitInferred=info.inferred;ball.userData.planetName=p.name;
  }
 }
 function updateHostSearch(){
@@ -384,6 +401,25 @@ function updateHostSearch(){
  }
  box.disabled=!matched.length;el('openSystem').disabled=!matched.length;
  if(!matched.length){const o=document.createElement('option');o.textContent='No catalogued match';box.appendChild(o);}
+}
+async function loadSourceAudit(){
+ const summary=el('sourceAuditSummary'),target=el('sourceAuditList');
+ const dataURL='https://raw.githubusercontent.com/maveric-007/cosmos-explorer/main/data/';
+ async function getJSON(name){let error=null;for(const url of [dataURL+name,'./data/'+name]){try{const res=await fetch(url,{cache:'no-store'});if(res.ok)return await res.json();error=Error('HTTP '+res.status);}catch(e){error=e;}}throw error||Error('Unable to load '+name);}
+ const date=x=>{if(!x)return 'Not verified';const d=new Date(x);return Number.isNaN(d.getTime())?String(x):d.toISOString().slice(0,16).replace('T',' ')+' UTC';};
+ try{
+  const [registry,audit,nasa]=await Promise.all([getJSON('source-registry.json'),getJSON('source-refresh-status.json'),getJSON('exoplanet-sync-status.json').catch(()=>null)]);
+  if(registry.schema!=='cosmos-explorer-source-registry-v1'||audit.schema!=='cosmos-explorer-source-refresh-status-v1')throw Error('Unexpected source audit version');
+  const rows=registry.sources.map(src=>({src,status:{...(audit.sources[src.id]||{})}}));
+  if(nasa){const row=rows.find(x=>x.src.id==='nasa_exoplanets');if(row){row.status.last_checked_utc=nasa.last_checked_utc;row.status.last_successful_check_utc=nasa.last_checked_utc;row.status.last_imported_utc=nasa.last_imported_utc;row.status.publisher_release_utc=nasa.publisher_release_utc;row.status.check_status=nasa.check_status;}}
+  summary.textContent=rows.length+' registered sources; '+rows.filter(x=>x.status.last_successful_check_utc).length+' with a recorded successful check; '+rows.filter(x=>x.status.last_imported_utc||x.status.last_imported_date).length+' with an evidenced import/integration date. Most external sources are metadata monitoring only, not ingested.';
+  const table=document.createElement('table'),thead=document.createElement('thead'),headrow=document.createElement('tr');
+  for(const h of ['Data source','Checked (UTC)','Imported','Provider release / status']){const cell=document.createElement('th');cell.textContent=h;headrow.appendChild(cell);}thead.appendChild(headrow);table.appendChild(thead);
+  const body=document.createElement('tbody');
+  for(const {src,status} of rows){const tr=document.createElement('tr');const name=document.createElement('td'),anchor=document.createElement('a');anchor.href=src.official_url;anchor.textContent=src.name;anchor.target='_blank';anchor.rel='noopener noreferrer';name.appendChild(anchor);tr.appendChild(name);
+   for(const value of [date(status.last_checked_utc),status.last_imported_date||date(status.last_imported_utc),date(status.publisher_release_utc)+' · '+String(status.check_status||'not checked').replaceAll('_',' ')]){const cell=document.createElement('td');cell.textContent=value;tr.appendChild(cell);}body.appendChild(tr);}
+  table.appendChild(body);target.replaceChildren(table);
+ }catch(err){summary.textContent='Source audit unavailable: '+err.message+'; this does not mean any provider was checked.';}
 }
 async function loadExoplanetCatalog(){
  try{
@@ -460,6 +496,7 @@ function setMode(mode,fromScale=false){
  state.selected={solar:'Earth',local:'Proxima Centauri',milky:'Sun (galactic orbit)',galaxies:'Milky Way',universe:'Milky Way — observer',blackhole:'Sagittarius A*',system:state.systemName||'Planetary systems'}[mode];
  state.playing=false;el('playPause').textContent='▶ Play';
  if(mode==='universe')state.timeYears=-7.5e9;
+  if(mode==='system'){state.day=0;state.timeYears=0;}
  const range=TIME_RANGES[mode];
  if(range){state.timeYears=Math.min(range.unit==='days'?range.max/365.25:range.max,Math.max(range.unit==='days'?0:range.min,state.timeYears));state.day=Math.max(0,Math.min(1826,state.timeYears*365.25));}
  build();
@@ -469,6 +506,7 @@ function setMode(mode,fromScale=false){
 function timeLabel(){
  const y=state.timeYears;
  if(state.mode==='solar')return dateStr(state.day);
+  if(state.mode==='system')return f(state.day,0)+' elapsed days · illustrative orbital phases';
  if(state.mode==='universe')return cosmosAtLookback(y).lookbackGyr.toFixed(2)+' billion years lookback';
  if(state.mode==='local')return (y<0?'−':'+')+f(Math.abs(y),0)+' yr';
  return (y<0?'−':'+')+(Math.abs(y)/1e6).toFixed(1)+' million yr';
@@ -480,14 +518,14 @@ function configureTime(){
  input.min=String(r.min);input.max=String(r.max);input.step=String(r.step);
  input.value=String(Math.max(r.min,Math.min(r.max,r.unit==='days'?state.day:state.timeYears)));
  el('dateLabel').textContent=timeLabel();
- const speeds=state.mode==='solar'?[[1,'1 day/s'],[10,'10 days/s'],[40,'40 days/s']]:
+ const speeds=(state.mode==='solar'||state.mode==='system')?[[1,'1 day/s'],[10,'10 days/s'],[40,'40 days/s']]:
  state.mode==='local'?[[25,'25 years/s'],[250,'250 years/s'],[1000,'1,000 years/s']]:
  state.mode==='milky'?[[1e6,'1 Myr/s'],[5e6,'5 Myr/s'],[20e6,'20 Myr/s']]:
  state.mode==='galaxies'?[[1e7,'10 Myr/s'],[1e8,'100 Myr/s'],[5e8,'500 Myr/s']]:
  [[1e8,'0.1 Gyr/s'],[5e8,'0.5 Gyr/s'],[1e9,'1 Gyr/s']];
  const sel=el('speed');sel.innerHTML='';for(const [value,label] of speeds){const o=document.createElement('option');o.value=String(value);o.textContent=label;sel.appendChild(o);}
  state.speed=speeds[1][0];sel.value=String(state.speed);
- const quality={solar:'OBSERVED / CALCULATED · Swiss Ephemeris 2026–2031',local:'MIXED · 7,922 catalogue stars static at J2000, 3 stars with approximate linear motion, other background schematic',milky:'MIXED · stellar survey subset in approximate galactic positions; spiral and solar orbit schematic',galaxies:'MIXED · M31, M33, M87 observed directions; others schematic; Andromeda radial-only scenario',universe:'CALCULATED FLAT ΛCDM LIGHT CONE · synthetic cosmic background, not a galaxy survey'};
+ const quality={solar:'OBSERVED / CALCULATED · Swiss Ephemeris 2026–2031',system:'ILLUSTRATIVE EXOPLANET PHASES · animate only published orbital periods; not observed epoch positions',local:'MIXED · 7,922 catalogue stars static at J2000, 3 stars with approximate linear motion, other background schematic',milky:'MIXED · stellar survey subset in approximate galactic positions; spiral and solar orbit schematic',galaxies:'MIXED · M31, M33, M87 observed directions; others schematic; Andromeda radial-only scenario',universe:'CALCULATED FLAT ΛCDM LIGHT CONE · synthetic cosmic background, not a galaxy survey'};
  el('qualityBadge').textContent=quality[state.mode];
 }
 function advanceTime(delta){
@@ -500,6 +538,7 @@ function advanceTime(delta){
 }
 function updateTimePositions(){
  if(state.mode==='solar'){updateSolarPositions();}
+ else if(state.mode==='system'){const sys=currentSystem();if(sys)for(const obj of objects){const p=sys.planets.find(p=>p.name===obj.userData.planetName);if(!p)continue;const orbit=orbitData(p,sys);if(!orbit)continue;const e=Math.max(0,Math.min(.94,p.eccentricity??0)),a=orbit.a,b=a*Math.sqrt(1-e*e),i=sys.planets.indexOf(p),phase=(((i*1.61803398875)%1)+(p.period_days>0?state.day/p.period_days:0))*2*Math.PI;obj.position.copy(visualSystemPosition([a*(Math.cos(phase)-e),b*Math.sin(phase)]));}}
  else if(state.mode==='local'){for(const o of objects){const s=STARS.find(a=>a.name===o.userData.name);if(s&&STAR_ASTROMETRY[s.name])o.position.copy(measuredStarPosition(s,state.timeYears));}}
  else if(state.mode==='milky'){const sun=objects.find(o=>o.userData.name==='Sun (galactic orbit)');if(sun){const ang=2*Math.PI*(state.timeYears/230e6);sun.position.set(26*Math.cos(ang),0,26*Math.sin(ang));}}
  else if(state.mode==='galaxies'){
@@ -516,7 +555,7 @@ function updateTimePositions(){
 
 function build(){clearRoot();switch(state.mode){case 'solar':buildSolar();break;case 'system':buildPlanetarySystem();break;case 'local':buildLocal();break;case 'milky':buildMilky();break;case 'galaxies':buildGalaxies();break;case 'universe':buildUniverse();break;case 'blackhole':buildBH();break;}resetCamera();makeNav();makeObjectList();configureConstellationControls();el('spinControl').style.display=state.mode==='blackhole'?'block':'none';configureTime();updateTimePositions();updateDetails();if(state.mode!=='blackhole')applyBandCamera();const msg={solar:'AU · sampled ephemerides; object sizes and orbital spacing optimized for legibility',local:'ly · 7,922 static catalogue stars (J2000) plus 3 moving astrometric samples; constellation projection selectable',milky:'kly · static catalogue stars near the Sun; Milky Way spiral and solar orbit schematic',galaxies:'Mly · catalogue sky directions + approximate distances; radial-only scenario',universe:'Planck-based past light cone · modelled comoving distance; synthetic stars/filaments, not a 3D survey',system:'Confirmed catalogued exoplanets · illustrative orbital phase; missing orbits not invented',blackhole:'Units of GM/c² · Kerr equatorial spatial slice for an idealized black hole'};el('stageNote').textContent=msg[state.mode];if(state.mode==='universe')updateTimePositions();}
 function namesForMode(){return state.mode==='solar'?['Sun',...PLANETS.map(x=>x.name)]:state.mode==='system'?(currentSystem()?[currentSystem().name,...currentSystem().planets.map(p=>p.name)]:['No catalog loaded']):state.mode==='local'?['Sun',...STARS.map(x=>x.name)]:state.mode==='milky'?['Sagittarius A*','Sun (galactic orbit)']:state.mode==='galaxies'?GALS.map(x=>x.name):state.mode==='universe'?['Milky Way — observer']:['Sagittarius A*','M87*'];}
-function makeNav(){el('modes').innerHTML='';for(const [id,title,sub] of MODES){const b=document.createElement('button');b.type='button';b.className='navbtn'+(id===state.mode?' active':'');b.innerHTML=`${title}<small>${sub}</small>`;b.addEventListener('click',()=>setMode(id));el('modes').appendChild(b);}}
+function makeNav(){el('modes').innerHTML='';const picker=el('quickMode');picker.innerHTML='';for(const [id,title] of MODES){const option=document.createElement('option');option.value=id;option.textContent=title;picker.appendChild(option);}picker.value=state.mode;for(const [id,title,sub] of MODES){const b=document.createElement('button');b.type='button';b.className='navbtn'+(id===state.mode?' active':'');b.innerHTML=`${title}<small>${sub}</small>`;b.addEventListener('click',()=>setMode(id));el('modes').appendChild(b);}}
 function makeObjectList(){el('objects').innerHTML='';for(const name of namesForMode()){const b=document.createElement('button');b.type='button';b.className='objectbtn'+(name===state.selected?' active':'');b.textContent=name;b.addEventListener('click',()=>choose(name));el('objects').appendChild(b);}}
 function choose(name){state.selected=name;if(state.mode==='blackhole')build();else{makeObjectList();updateDetails();const target=objects.find(o=>o.userData.name===name);if(target&&state.mode!=='galaxies'){state.target.copy(target.position);updateCamera();}}}
 function metric(k,v){return `<div class="metric"><div class="k">${k}</div><div class="v">${v}</div></div>`;}
@@ -636,8 +675,8 @@ el('hostSearch').addEventListener('input',updateHostSearch);
 el('openSystem').addEventListener('click',()=>openHost(el('hostMatches').value));
 el('hostMatches').addEventListener('change',()=>{el('openSystem').disabled=false;});
 el('hostSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();openHost(el('hostMatches').value);}});
-el('inspectSelectedSystem').addEventListener('click',()=>openHost(el('inspectSelectedSystem').dataset.host));
-function frame(ms){const dt=clockPrev?Math.min(.1,(ms-clockPrev)/1000):0;clockPrev=ms;if(state.playing&&TIME_RANGES[state.mode]){advanceTime(dt*state.speed);if(ms-lastInfo>220){updateDetails();lastInfo=ms;}}if(ms-lastLabels>80){refreshLabels();lastLabels=ms;}renderer.render(scene,camera);requestAnimationFrame(frame);}requestAnimationFrame(frame);loadConstellationCatalog();loadExoplanetCatalog();
+el('inspectSelectedSystem').addEventListener('click',()=>openHost(el('inspectSelectedSystem').dataset.host));el('quickMode').addEventListener('change',e=>setMode(e.target.value));
+function frame(ms){const dt=clockPrev?Math.min(.1,(ms-clockPrev)/1000):0;clockPrev=ms;if(state.playing&&TIME_RANGES[state.mode]){advanceTime(dt*state.speed);if(ms-lastInfo>220){updateDetails();lastInfo=ms;}}if(ms-lastLabels>80){refreshLabels();lastLabels=ms;}renderer.render(scene,camera);requestAnimationFrame(frame);}requestAnimationFrame(frame);loadConstellationCatalog();loadExoplanetCatalog();loadSourceAudit();
 }
 try{const module=await import('https://cdn.jsdelivr.net/npm/three@0.180.0/+esm');boot(module);}catch(err){console.error(err);el('sceneStatus').style.display='block';el('sceneStatus').textContent='Unable to load Three.js. This 3D version needs a browser with internet access. The original offline canvas model remains available separately.';el('desc').textContent='Planet ephemeris data are bundled in the HTML, but 3D rendering requires the Three.js JavaScript module to load.';}
 </script></body></html>
