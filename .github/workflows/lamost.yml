@@ -1,0 +1,55 @@
+name: Import bounded LAMOST DR12 v2.0 catalog sample
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "37 10 * * 0" # after AllWISE/2MASS Sunday source imports
+  push:
+    paths:
+      - "scripts/sync_lamost.py"
+      - ".github/workflows/lamost.yml"
+permissions:
+  contents: write
+concurrency:
+  group: lamost-bounded-import
+  cancel-in-progress: false
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Offline schema and importer self-test
+        run: python scripts/sync_lamost.py --self-test
+      - name: Discover actual LAMOST public TAP schema then import
+        run: python scripts/sync_lamost.py
+      - name: Validate output and audit timestamps
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('data/lamost_dr12-sample.json')
+          data=json.loads(p.read_text())
+          status=json.loads(Path('data/lamost_dr12-sync-status.json').read_text())
+          assert data['schema']=='cosmos-explorer-lamost-sample-v1'
+          assert 5<=data['counts']['sample_observations']<=200
+          assert p.stat().st_size<300000
+          assert status['normalized_sha256'] and status['last_imported_utc']
+          PY
+      - name: Promote only validated output
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/lamost_dr12-sample.json data/lamost_dr12-sync-status.json
+          if git diff --cached --quiet; then
+            echo "No validated changes"
+          else
+            git commit -m "data: sync bounded LAMOST DR12 sample"
+            git fetch origin main
+            git rebase origin/main
+            git push origin HEAD:main
+          fi
