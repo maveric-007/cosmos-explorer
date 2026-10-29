@@ -71,7 +71,7 @@ def test():
         vals=dict(zip(COLS,["123","1","2016.0","20","-10","10",".2","50","1","2",rv,"12","1.1"]))
         vals["source_id"]=str(i);vals["random_index"]=str(i)
         return ",".join(vals[c] for c in COLS)
-    raw=",".join(COLS)+"\n"+row(1)+"\n"+row(2,"20")+"\n"
+    raw=",".join(COLS)+"\n"+"\n".join(row(i,"20" if i==2 else "") for i in range(1,26))+"\n"
     assert normalize(raw,2)["stars"][0]["radial_velocity_km_s"] is None
     with tempfile.TemporaryDirectory() as d:
         o=pathlib.Path(d)/"sample.json";s=pathlib.Path(d)/"status.json"
