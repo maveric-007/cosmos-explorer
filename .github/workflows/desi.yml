@@ -1,0 +1,57 @@
+name: Import bounded DESI DR1 validated redshifts
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "02 11 * * 0" # after larger catalog Sunday workflows
+  push:
+    paths:
+      - "scripts/sync_desi.py"
+      - ".github/workflows/desi.yml"
+permissions:
+  contents: write
+concurrency:
+  group: desi-dr1-bounded-import
+  cancel-in-progress: false
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test DESI importer invariants offline
+        run: python scripts/sync_desi.py --self-test
+      - name: Query public DESI DR1 zpix with strict sample bound
+        run: python scripts/sync_desi.py
+      - name: Validate unique keys and preserved measurement provenance
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path=Path("data/desi_dr1-sample.json")
+          doc=json.loads(path.read_text(encoding="utf-8"))
+          status=json.loads(Path("data/desi_dr1-sync-status.json").read_text(encoding="utf-8"))
+          assert doc["schema"]=="cosmos-explorer-desi-dr1-sample-v1"
+          assert 10<=doc["counts"]["sample_entries"]<=200
+          assert len({(r["targetid"],r["survey"],r["program"]) for r in doc["records"]})==doc["counts"]["sample_entries"]
+          assert path.stat().st_size<170000
+          assert status["normalized_sha256"] and status["last_imported_utc"]
+          print(doc["counts"])
+          PY
+      - name: Commit validated compact redshift sample and refresh dates
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/desi_dr1-sample.json data/desi_dr1-sync-status.json
+          if git diff --cached --quiet; then
+            echo "No new verified data"
+          else
+            git commit -m "data: sync validated bounded DESI DR1 redshifts"
+            git fetch origin main
+            git rebase origin/main
+            git push origin HEAD:main
+          fi
