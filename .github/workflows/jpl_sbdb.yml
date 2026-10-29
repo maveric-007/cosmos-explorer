@@ -1,0 +1,55 @@
+name: Import bounded JPL Small-Body Database asteroid orbits
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "41 7 * * 0"
+  push:
+    paths:
+      - "scripts/sync_jpl_sbdb.py"
+      - ".github/workflows/jpl_sbdb.yml"
+permissions:
+  contents: write
+concurrency:
+  group: jpl-sbdb-bounded-import
+  cancel-in-progress: false
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test parsing, distinct object IDs, fields, and idempotency
+        run: python scripts/sync_jpl_sbdb.py --self-test
+      - name: Fetch and validate bounded JPL small-body orbital elements
+        run: python scripts/sync_jpl_sbdb.py
+      - name: Validate sample and source provenance before commit
+        run: |
+          python - <<'PY'
+          import json, pathlib
+          p=pathlib.Path("data/jpl-sbdb-sample.json")
+          data=json.loads(p.read_text())
+          status=json.loads(pathlib.Path("data/jpl-sbdb-sync-status.json").read_text())
+          assert data["schema"]=="cosmos-explorer-jpl-sbdb-sample-v1"
+          assert data["sample_only"] is True
+          assert 10<=data["count"]<=200
+          assert len(data["objects"])==data["count"]
+          assert len({v["spkid"] for v in data["objects"]})==data["count"]
+          assert p.stat().st_size<150000
+          assert status["normalized_sha256"] and status["last_imported_utc"]
+          PY
+      - name: Commit validated JPL derivative, preserving last good on failure
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/jpl-sbdb-sample.json data/jpl-sbdb-sync-status.json
+          if git diff --cached --quiet; then
+            echo "JPL sample unchanged"
+          else
+            git commit -m "data: import bounded validated JPL SBDB asteroid orbits"
+            git fetch origin main
+            git rebase origin/main
+            git push origin HEAD:main
+          fi
