@@ -26,6 +26,8 @@ SOURCES = {
     "desi_dr1": ("desi_dr1-sample.json", "records", True),
     "galah_dr4": ("galah_dr4-sample.json", "records", False),
     "apogee_dr17": ("apogee_dr17-sample.json", "records", False),
+    "jpl_sbdb": ("jpl-sbdb-sample.json", "objects", True),
+    "jpl_horizons": ("jpl-horizons-sample.json", "bodies", True),
 }
 SCHEMA = "cosmos-explorer-unified-observation-index-v1"
 
@@ -108,9 +110,18 @@ def build(data_dir):
         elif source == "desi_dr1":
             if obj.get("schema") != "cosmos-explorer-desi-dr1-sample-v1":
                 raise ValueError("DESI source schema mismatch")
-        else:
+        elif source in ("galah_dr4", "apogee_dr17"):
             if obj.get("schema") != "cosmos-explorer-vizier-survey-sample-v1":
                 raise ValueError("VizieR source schema mismatch")
+        elif source == "jpl_sbdb":
+            if obj.get("schema") != "cosmos-explorer-jpl-sbdb-sample-v1":
+                raise ValueError("JPL SBDB schema mismatch")
+        elif source == "jpl_horizons":
+            if (obj.get("schema") != "cosmos-explorer-jpl-horizons-snapshot-v1"
+                    or obj.get("reference_frame") != "ICRF"
+                    or obj.get("origin") != "Solar System Barycenter (500@0)"
+                    or obj.get("correction") != "NONE (geometric)"):
+                raise ValueError("JPL Horizons schema/frame/origin mismatch")
         manifest.append({"source": source, "file": "data/" + filename,
                          "sha256": hashlib.sha256(raw).hexdigest(),
                          "schema": obj.get("schema"), "rows": len(items),
@@ -158,6 +169,38 @@ def build(data_dir):
             elif source == "apogee_dr17":
                 emit(source, item["source_row_id"], "spectral_catalog_entry",
                      item.get("ra_deg"), item.get("dec_deg"))
+            elif source == "jpl_sbdb":
+                # Orbital elements do not imply a fixed equatorial sky position.
+                emit(source, item["spkid"], "small_body_orbit_solution", None, None,
+                     name=item.get("full_name"),
+                     primary_designation=item.get("primary_designation"),
+                     orbit_solution_id=item.get("orbit_solution_id"),
+                     orbit_epoch_jd_tdb=number(item.get("epoch_jd_tdb"), 2000000, 3000000),
+                     semimajor_axis_au=number(item.get("semimajor_axis_au"), 0),
+                     eccentricity=number(item.get("eccentricity"), 0),
+                     inclination_deg=number(item.get("inclination_deg"), 0, 180),
+                     diameter_km_catalog=number(item.get("diameter_km_catalog"), 0),
+                     gm_km3_s2_catalog=number(item.get("gm_km3_s2_catalog"), 0))
+            elif source == "jpl_horizons":
+                # ICRF barycentric vectors are not RA/Dec sky positions.
+                position = item.get("position_km_icrf_ssb")
+                velocity = item.get("velocity_km_s_icrf_ssb")
+                if (not isinstance(position, list) or len(position) != 3
+                        or not isinstance(velocity, list) or len(velocity) != 3):
+                    raise ValueError("Invalid JPL Horizons state-vector dimensions")
+                position = [number(v) for v in position]
+                velocity = [number(v) for v in velocity]
+                if any(v is None for v in position + velocity):
+                    raise ValueError("Missing JPL Horizons state vector components")
+                epoch = number(item.get("epoch_jd_tdb"), 2000000, 3000000)
+                if epoch is None or epoch != number(obj.get("epoch_jd_tdb"), 2000000, 3000000):
+                    raise ValueError("JPL Horizons target snapshot epoch mismatch")
+                emit(source, item["target_id"], "solar_system_ephemeris_state", None, None,
+                     name=item.get("target_name"), epoch_jd_tdb=epoch,
+                     position_km_icrf_ssb=position, velocity_km_s_icrf_ssb=velocity,
+                     reference_frame="ICRF",
+                     origin="Solar System Barycenter (500@0)",
+                     correction="NONE (geometric)")
     for source_key, gaia, hip in system_refs:
         if gaia is not None and gaia in gaia_ids:
             links.append({"from": source_key, "to": "gaia_dr3:" + gaia,
@@ -179,7 +222,9 @@ def build(data_dir):
                         "Nearby sky coordinates alone never establish an identity.",
                         "Unknown radial velocities, ages, masses and distances stay unknown.",
                         "Infrared detections can be nonstellar; DESI redshift is not a Euclidean distance.",
-                        "NASA composite host identifier may represent a multiple-star system."],
+                        "NASA composite host identifier may represent a multiple-star system.",
+                        "JPL Horizons vectors are model-derived barycentric ephemerides only at their stated epoch.",
+                        "JPL SBDB asteroid elements do not specify instantaneous sky positions or unknown masses."],
             "input_manifest": manifest,
             "counts": {"indexed_records": len(rows), "by_source": counts,
                        "published_id_links": len(links), "unresolved_records": len(rows) - len({v["from"] for v in links})},
@@ -216,12 +261,31 @@ def self_test():
             "lamost_dr12-sample.json": {"schema": "cosmos-explorer-lamost-sample-v1",
                                         "records": [{"source_observation_id": "L1", "ra_deg": 12, "dec_deg": 1}]},
             "desi_dr1-sample.json": {"schema": "cosmos-explorer-desi-dr1-sample-v1",
-                                     "records": [{"targetid": "D1", "ra_deg": 12, "dec_deg": 1, "redshift": 1.2}]}}
+                                     "records": [{"targetid": "D1", "ra_deg": 12, "dec_deg": 1, "redshift": 1.2}]},
+            "jpl-sbdb-sample.json": {"schema": "cosmos-explorer-jpl-sbdb-sample-v1",
+                                     "objects": [{"spkid": "20000001", "full_name": "1 Ceres",
+                                                  "primary_designation": "1", "epoch_jd_tdb": 2461200.5,
+                                                  "semimajor_axis_au": 2.7, "eccentricity": 0.08,
+                                                  "gm_km3_s2_catalog": None}]},
+            "jpl-horizons-sample.json": {"schema": "cosmos-explorer-jpl-horizons-snapshot-v1",
+                                        "reference_frame": "ICRF",
+                                        "origin": "Solar System Barycenter (500@0)",
+                                        "correction": "NONE (geometric)",
+                                        "epoch_jd_tdb": 2461342.5,
+                                        "bodies": [{"target_id": "10", "target_name": "Sun",
+                                                    "epoch_jd_tdb": 2461342.5,
+                                                    "position_km_icrf_ssb": [1., 2., 3.],
+                                                    "velocity_km_s_icrf_ssb": [0.01, 0.02, 0.03]}]}}
         for filename, fixture in fixtures.items():
             (p / filename).write_text(json.dumps(fixture), encoding="utf-8")
         index = build(p)
-        assert index["counts"]["indexed_records"] == 9
+        assert index["counts"]["indexed_records"] == 11
         assert index["counts"]["published_id_links"] == 2
+        assert index["counts"]["by_source"]["jpl_sbdb"] == 1
+        assert index["counts"]["by_source"]["jpl_horizons"] == 1
+        assert next(r for r in index["records"] if r["id"] == "jpl_sbdb:20000001")["ra_deg"] is None
+        assert "gm_km3_s2_catalog" not in next(r for r in index["records"] if r["id"] == "jpl_sbdb:20000001")
+        assert next(r for r in index["records"] if r["id"] == "jpl_horizons:10")["velocity_km_s_icrf_ssb"] == [0.01, 0.02, 0.03]
         assert "gaia_dr3:43" in {r["id"] for r in index["records"]}
         assert not any(x["to"] == "gaia_dr3:43" for x in index["links"])
         assert index == build(p)
@@ -232,7 +296,7 @@ def self_test():
             raise AssertionError("Malformed source did not fail closed")
         except ValueError:
             pass
-    print("Unified index self-tests passed: ID associations, no proximity merges, nulls, deterministic output, schema rejection")
+    print("Unified index self-tests passed: published IDs, distinct asteroid/ephemeris types, no proximity merges, nulls, deterministic output, schema rejection")
 
 
 def main():
