@@ -79,6 +79,26 @@ def run(registry_path=REGISTRY, status_path=STATUS, nasa_path=NASA):
                 "error": None,
                 "method": "NASA PSCompPars validated full import",
             })
+        elif source["check_method"] == "gaia":
+            gaia_path = BASE / "data/gaia-sync-status.json"
+            if gaia_path.exists():
+                official = json.loads(gaia_path.read_text(encoding="utf-8"))
+                if official.get("schema") != "cosmos-explorer-gaia-sync-status-v1":
+                    raise ValueError("Invalid Gaia import audit schema")
+                entry.update({
+                    "last_checked_utc": official.get("last_checked_utc"),
+                    "last_successful_check_utc": official.get("last_checked_utc"),
+                    "last_imported_utc": official.get("last_imported_utc"),
+                    "publisher_release_utc": official.get("publisher_release_utc"),
+                    "check_status": official.get("check_status"),
+                    "count": official.get("count"),
+                    "method": "ESA Gaia DR3 bounded validated sample import",
+                    "import_state": "bounded_sample_ingested",
+                    "error": None
+                })
+            else:
+                entry["check_status"] = "adapter_configured_not_checked"
+                entry["method"] = "Gaia bounded importer configured but not yet verified"
         else:
             checked = now_utc()
             outcome = probe(source["official_url"])
