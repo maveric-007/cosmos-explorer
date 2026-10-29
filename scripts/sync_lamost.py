@@ -7,6 +7,7 @@ measure masses/distances. Run independently of existing NASA/Gaia/IRSA jobs.
 """
 import argparse,csv,datetime as dt,hashlib,io,json,math,os,pathlib,re,tempfile
 import urllib.parse,urllib.request
+import xml.etree.ElementTree as ET
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 ENDPOINT="https://www.lamost.org/dr12/v2.0/voservice/tap/sync"
 OUTPUT=ROOT/"data/lamost_dr12-sample.json"
@@ -21,7 +22,27 @@ def tap(sql):
         data=r.read(650001)
         if len(data)>650000:raise ValueError("LAMOST response exceeds bounded sample size")
         txt=data.decode("utf-8-sig")
-    if txt.lstrip().startswith("<"):raise ValueError("LAMOST TAP returned XML/error, not CSV: "+txt[:800].replace("\n"," "))
+    if txt.lstrip().startswith("<"):
+        # China-VO TAP may return a valid VOTable regardless of FORMAT=csv.
+        # Parse only TABLEDATA and explicitly reject QUERY_STATUS=ERROR.
+        root=ET.fromstring(txt)
+        for status in root.iter():
+            if status.tag.split("}")[-1]=="INFO" and status.get("name")=="QUERY_STATUS":
+                if status.get("value") not in ("OK","OVERFLOW"):
+                    raise ValueError("LAMOST TAP query rejected: "+str(status.get("value"))+" "+str((status.text or "")[:240]))
+        table=next((t for t in root.iter() if t.tag.split("}")[-1]=="TABLE"),None)
+        if table is None:raise ValueError("LAMOST VOTable lacks TABLE")
+        fields=[t.get("name") for t in table if t.tag.split("}")[-1]=="FIELD"]
+        if not fields:raise ValueError("LAMOST VOTable lacks FIELD names")
+        output=io.StringIO();writer=csv.writer(output);writer.writerow(fields)
+        n=0
+        for tr in table.iter():
+            if tr.tag.split("}")[-1]!="TR":continue
+            values=["".join(td.itertext()).strip() for td in tr if td.tag.split("}")[-1]=="TD"]
+            if len(values)!=len(fields):raise ValueError("LAMOST VOTable column count mismatch")
+            writer.writerow(values);n+=1
+            if n>400:raise ValueError("LAMOST VOTable exceeded bound")
+        txt=output.getvalue()
     return txt,url
 def parse_csv(raw):
     reader=csv.DictReader(io.StringIO(raw))
