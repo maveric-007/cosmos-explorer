@@ -1,0 +1,56 @@
+name: Import JPL Horizons fixed-epoch barycentric vectors
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/sync_jpl_horizons.py"
+      - ".github/workflows/jpl_horizons.yml"
+permissions:
+  contents: write
+concurrency:
+  group: jpl-horizons-vector-import
+  cancel-in-progress: false
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test vector parser, epoch, units and safe atomic output
+        run: python scripts/sync_jpl_horizons.py --self-test
+      - name: Import selected JPL Horizons geometric states
+        run: python scripts/sync_jpl_horizons.py
+      - name: Verify schema, state vectors and source fingerprints
+        run: |
+          python - <<'PY'
+          import json, math, pathlib
+          data=json.loads(pathlib.Path("data/jpl-horizons-sample.json").read_text())
+          status=json.loads(pathlib.Path("data/jpl-horizons-sync-status.json").read_text())
+          assert data["schema"]=="cosmos-explorer-jpl-horizons-snapshot-v1"
+          assert data["origin"]=="Solar System Barycenter (500@0)"
+          assert data["reference_frame"]=="ICRF"
+          assert data["correction"]=="NONE (geometric)"
+          assert data["count"]==11 and len(data["bodies"])==11
+          assert len({v["target_id"] for v in data["bodies"]})==11
+          assert all(math.isfinite(v) for r in data["bodies"] for axis in ("position_km_icrf_ssb","velocity_km_s_icrf_ssb") for v in r[axis])
+          assert len(status["source_json_sha256"])==11 and status["normalized_sha256"]
+          assert status["last_imported_utc"] and status["ephemeris_epoch_tdb"]
+          assert pathlib.Path("data/jpl-horizons-sample.json").stat().st_size<40000
+          print(data["count"],data["epoch_calendar_tdb"],status["normalized_sha256"])
+          PY
+      - name: Commit validated Horizons snapshot only
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/jpl-horizons-sample.json data/jpl-horizons-sync-status.json
+          if git diff --cached --quiet; then
+            echo "No changed Horizons snapshot"
+          else
+            git commit -m "data: pin JPL Horizons bounded barycentric state vectors"
+            git fetch origin main
+            git rebase origin/main
+            git push origin HEAD:main
+          fi
