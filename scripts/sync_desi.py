@@ -11,10 +11,10 @@ ROOT=pathlib.Path(__file__).resolve().parents[1]
 DATA=ROOT/"data/desi_dr1-sample.json"
 STATUS=ROOT/"data/desi_dr1-sync-status.json"
 ENDPOINT="https://datalab.noirlab.edu/tap/sync"
-HEALPIX=500
+HEALPIX=None
 QUERY=("SELECT TOP 200 targetid,survey,program,mean_fiber_ra,mean_fiber_dec,"
        "z,zerr,zwarn,spectype,healpix FROM desi_dr1.zpix "
-       "WHERE healpix=500 AND zwarn=0 AND spectype='GALAXY' AND z>0")
+       "WHERE zwarn=0 AND spectype='GALAXY' AND z>0")
 URL=ENDPOINT+"?"+urllib.parse.urlencode({"REQUEST":"doQuery","LANG":"ADQL","FORMAT":"csv","QUERY":QUERY})
 FIELDS=("targetid","survey","program","mean_fiber_ra","mean_fiber_dec","z","zerr","zwarn","spectype","healpix")
 def utc():
@@ -44,11 +44,11 @@ def normalize(raw,minimum=10):
         pixel=(item["healpix"] or "").strip()
         if (ra is None or not 0<=ra<360 or dec is None or not -90<=dec<=90 or
            z is None or z<=0 or zerr is None or zerr<0 or flag!="0" or
-           (item["spectype"] or "").strip()!="GALAXY" or pixel!=str(HEALPIX)):
+           (item["spectype"] or "").strip()!="GALAXY" or not pixel.isdecimal()):
             raise ValueError("DESI sky/redshift/quality gates failed")
         records.append({"targetid":targetid,"survey":survey,"program":program,
            "ra_deg":ra,"dec_deg":dec,"redshift":z,"redshift_error":zerr,
-           "zwarn":0,"spectype":"GALAXY","healpix_nside64_nested":HEALPIX})
+           "zwarn":0,"spectype":"GALAXY","healpix_nside64_nested":int(pixel)})
     if not minimum<=len(records)<=200:raise ValueError("DESI sample unexpectedly empty/truncated")
     records.sort(key=lambda r:(r["targetid"],r["survey"],r["program"]))
     return {"schema":"cosmos-explorer-desi-dr1-sample-v1",
@@ -57,7 +57,7 @@ def normalize(raw,minimum=10):
        "query":QUERY,"query_url":URL,
        "reference":"https://data.desi.lbl.gov/doc/access/database/",
        "license":"DESI DR1 CC BY 4.0; cite official DESI Collaboration and acknowledgments",
-       "sample_scope":"One fixed HEALPix (nside=64 nested), up to 200 quality-filtered zpix galaxy entries; not the full DR1 or unique galaxy count.",
+       "sample_scope":"Up to 200 quality-filtered zpix galaxy entries from public TAP; not the full DR1 or statistically representative survey.",
        "scientific_caveat":"Measured spectroscopic redshifts, not measured Euclidean distances; no cosmological distance inversion or physical motion inferred here.",
        "units":{"sky":"ICRS degrees (mean fiber position)","z":"dimensionless spectroscopic redshift"},
        "counts":{"sample_entries":len(records)},"records":records}
