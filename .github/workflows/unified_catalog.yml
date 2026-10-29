@@ -1,10 +1,25 @@
 name: Build unified astronomy observation index
 on:
   workflow_dispatch:
+  schedule:
+    # Source-import commits made by GitHub Actions do not trigger other push workflows.
+    # Rebuild daily even if no human-originated push occurs.
+    - cron: "09 09 * * *"
   push:
     paths:
       - "scripts/build_unified_catalog.py"
       - ".github/workflows/unified_catalog.yml"
+      - "data/exoplanet-systems.json"
+      - "data/gaia-sample.json"
+      - "data/constellations-catalog.json"
+      - "data/allwise-sample.json"
+      - "data/twomass-sample.json"
+      - "data/lamost_dr12-sample.json"
+      - "data/desi_dr1-sample.json"
+      - "data/galah_dr4-sample.json"
+      - "data/apogee_dr17-sample.json"
+      - "data/jpl-sbdb-sample.json"
+      - "data/jpl-horizons-sample.json"
 permissions:
   contents: write
 concurrency:
