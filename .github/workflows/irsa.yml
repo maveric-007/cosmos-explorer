@@ -1,0 +1,60 @@
+name: Import IRSA AllWISE then 2MASS validated samples
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "11 9 * * 0" # weekly catalog import, distinct from daily provider checks
+  push:
+    paths:
+      - "scripts/sync_irsa.py"
+      - ".github/workflows/irsa.yml"
+permissions:
+  contents: write
+concurrency:
+  group: irsa-sample-import
+  cancel-in-progress: false
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 17
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test shared IRSA importer offline
+        run: python scripts/sync_irsa.py --self-test
+      - name: Import AllWISE first (747634026 published full-source entries)
+        run: python scripts/sync_irsa.py --source allwise
+      - name: Import 2MASS second (470992970 published point sources)
+        run: python scripts/sync_irsa.py --source twomass
+      - name: Verify distinct source catalogs and audit records
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for name in ('allwise','twomass'):
+              path=Path('data/'+name+'-sample.json')
+              data=json.loads(path.read_text(encoding='utf8'))
+              audit=json.loads(Path('data/'+name+'-sync-status.json').read_text(encoding='utf8'))
+              assert data['schema']=='cosmos-explorer-irsa-sample-v1'
+              assert 10<=data['counts']['sample_records']<=500
+              assert len({r['designation'] for r in data['records']})==data['counts']['sample_records']
+              assert path.stat().st_size<700000
+              assert audit['source_id']==name and audit['last_imported_utc'] and audit['normalized_sha256']
+              print(name, data['counts'],audit['check_status'])
+          PY
+      - name: Commit only validated bounded products and audit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/allwise-sample.json data/allwise-sync-status.json data/twomass-sample.json data/twomass-sync-status.json
+          if git diff --cached --quiet; then
+            echo "No changed catalogs"
+          else
+            git commit -m "data: import validated AllWISE and 2MASS subsets"
+            git fetch origin main
+            git rebase origin/main
+            git push origin HEAD:main
+          fi
