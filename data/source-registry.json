@@ -16,7 +16,10 @@
       "category": "stellar",
       "official_url": "https://gea.esac.esa.int/archive/",
       "check_method": "gaia",
-      "import_state": "bounded_sample_pipeline"
+      "import_state": "bounded_sample_pipeline",
+      "published_catalog_count": 1811709771,
+      "count_basis": "observed sources",
+      "count_reference": "https://doi.org/10.17876/gaia/dr.3/1"
     },
     {
       "id": "galah_dr4",
@@ -24,7 +27,10 @@
       "category": "stellar",
       "official_url": "https://www.galah-survey.org/dr4/the_catalogues/",
       "check_method": "metadata",
-      "import_state": "not_ingested"
+      "import_state": "not_ingested",
+      "published_catalog_count": 917588,
+      "count_basis": "unique stars",
+      "count_reference": "https://www.galah-survey.org/dr4/overview/"
     },
     {
       "id": "apogee_dr17",
@@ -40,7 +46,10 @@
       "category": "stellar",
       "official_url": "https://www.lamost.org/dr12/",
       "check_method": "metadata",
-      "import_state": "not_ingested"
+      "import_state": "not_ingested",
+      "published_catalog_count": 28074308,
+      "count_basis": "released low- and medium-resolution spectra",
+      "count_reference": "https://www.lamost.org/dr12/"
     },
     {
       "id": "desi_dr1",
@@ -48,23 +57,32 @@
       "category": "galaxies",
       "official_url": "https://data.desi.lbl.gov/doc/releases/dr1/",
       "check_method": "metadata",
-      "import_state": "not_ingested"
+      "import_state": "not_ingested",
+      "published_catalog_count": 23060727,
+      "count_basis": "DR1 zpix redshift catalog entries (not unique targets)",
+      "count_reference": "https://datalab.noirlab.edu/data/desi"
     },
     {
       "id": "twomass",
       "name": "2MASS",
       "category": "stellar",
       "official_url": "https://data.nasa.gov/dataset/2mass-all-sky-point-source-catalog",
-      "check_method": "metadata",
-      "import_state": "not_ingested"
+      "check_method": "irsa",
+      "import_state": "bounded_sample_ingested",
+      "published_catalog_count": 470992970,
+      "count_basis": "2MASS PSC sources",
+      "count_reference": "https://irsa.ipac.caltech.edu/data/2MASS/docs/releases/allsky/doc/sec2_2.html"
     },
     {
       "id": "allwise",
       "name": "AllWISE",
       "category": "stellar",
       "official_url": "https://irsa.ipac.caltech.edu/Missions/wise.html",
-      "check_method": "metadata",
-      "import_state": "not_ingested"
+      "check_method": "irsa",
+      "import_state": "bounded_sample_ingested",
+      "published_catalog_count": 747634026,
+      "count_basis": "AllWISE Source Catalog entries",
+      "count_reference": "https://irsa.ipac.caltech.edu/data/WISE/docs/release/AllWISE/expsup/sec1_3.html"
     },
     {
       "id": "simbad",
@@ -186,5 +204,6 @@
       "check_method": "metadata",
       "import_state": "bundled_sample"
     }
-  ]
+  ],
+  "priority_policy": "Process sources in descending verified primary catalog entry count, treating unlike kinds (spectra, sky sources, maps, services) as non-equivalent and not claiming a complete sortable row count when unknown. Stop at source-specific access/validation blockers without inventing imported data. Full catalog ingestion requires partitioned external storage; GitHub Pages carries bounded derived products only."
 }
