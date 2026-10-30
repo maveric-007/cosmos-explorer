@@ -5,10 +5,17 @@ The GALAH VizieR source is a *detrended derivative* of DR4, not the original
 Data Central allStar release. APOGEE III/286 represents DR17 allStar.
 Never confuse these source views with full source catalog coverage.
 """
-import argparse,csv,datetime as dt,hashlib,io,json,math,os,pathlib,tempfile
+import argparse,csv,datetime as dt,hashlib,io,json,math,os,pathlib,tempfile,urllib.error,time
 import urllib.parse,urllib.request,xml.etree.ElementTree as ET
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 BASE="https://tapvizier.cds.unistra.fr/TAPVizieR/tap/sync"
+# Verified VizieR publication mirrors use the ASU TSV protocol, independent of TAP.
+# On the 2026-10-29 GitHub runner the TAP host timed out during connection.
+ASU_ENDPOINTS=(
+ "https://vizier.cfa.harvard.edu/viz-bin/asu-tsv",
+ "https://vizier.cds.unistra.fr/viz-bin/asu-tsv",
+ "https://vizier.u-strasbg.fr/viz-bin/asu-tsv",
+)
 TABLES={
  "galah_dr4":{"table":'"J/A+A/703/A104/catalog"',
       "columns":("recno","GALAH","GaiaDR3","RAJ2000","DEJ2000"),
@@ -26,6 +33,39 @@ def query(source):
     return "SELECT TOP 200 "+",".join(config["columns"])+" FROM "+config["table"]
 def source_url(source):
     return BASE+"?"+urllib.parse.urlencode({"REQUEST":"doQuery","LANG":"ADQL","FORMAT":"csv","QUERY":query(source)})
+def source_asu_url(source,endpoint):
+    cfg=TABLES[source]
+    table=cfg["table"].strip('"')
+    return endpoint+"?"+urllib.parse.urlencode({
+        "-source":table,"-out":",".join(cfg["columns"]),
+        "-out.max":"200","-sort":"recno"
+    })
+
+def from_asu_tsv(raw,source):
+    """VizieR ASU text begins with # comments, then tab headers and a units row."""
+    cfg=TABLES[source]
+    lines=[line.rstrip("\\r") for line in raw.lstrip("\\ufeff").splitlines()
+           if line.strip() and not line.lstrip().startswith("#")]
+    if not lines:
+        raise ValueError("Empty/error VizieR ASU response")
+    header=next((i for i,line in enumerate(lines)
+                 if set(cfg["columns"]).issubset(set(x.strip() for x in line.split("\\t")))),None)
+    if header is None:raise ValueError("VizieR ASU response missing published column names")
+    fields=[c.strip() for c in lines[header].split("\\t")]
+    buf=io.StringIO();writer=csv.writer(buf);writer.writerow(fields)
+    for line in lines[header+1:]:
+        parts=line.split("\\t")
+        if len(parts)!=len(fields):raise ValueError("VizieR ASU response row/header mismatch")
+        if all(not c.strip() or set(c.strip())=={"-"} for c in parts):
+            continue
+        # ASU units rows are skipped separately from numeric records.
+        if not parts[fields.index("recno")].strip().isdecimal():
+            if any(x.strip() and not x.strip().startswith("-") for x in parts):
+                raise ValueError("VizieR ASU response has nonnumeric recno")
+            continue
+        writer.writerow([v.strip() for v in parts])
+    return buf.getvalue()
+
 def from_votable(raw):
     root=ET.fromstring(raw)
     for s in root.iter():
@@ -45,6 +85,7 @@ def from_votable(raw):
 def normalize(source,raw,minimum=10):
     cfg=TABLES[source]
     if raw.lstrip().startswith("<"):raw=from_votable(raw)
+    elif "\\t" in raw and raw.lstrip().startswith("#"):raw=from_asu_tsv(raw,source)
     rd=csv.DictReader(io.StringIO(raw.lstrip("\ufeff")))
     if set(cfg["columns"])-set(rd.fieldnames or []):
         raise ValueError("Missing published VizieR source columns: "+str(sorted(set(cfg["columns"])-set(rd.fieldnames or []))))
@@ -97,13 +138,34 @@ def sync(source,raw,data=None,status=None):
        "normalized_sha256":new_hash,"official_query_url":source_url(source)}
     write(status,audit);return audit
 def fetch(source):
-    req=urllib.request.Request(source_url(source),headers={
-      "User-Agent":"CosmosExplorer/0.8 (bounded VizieR research sample)","Accept":"text/csv,application/xml"})
-    with urllib.request.urlopen(req,timeout=100) as res:
-        if res.status!=200:raise ValueError("VizieR TAP HTTP "+str(res.status))
-        data=res.read(1300001)
-        if len(data)>1300000:raise ValueError("Oversized VizieR response")
-    return data.decode("utf-8-sig")
+    # Fallback across independent VizieR mirrors; do not silently use stale
+    # data or substitute made-up observations on an upstream outage.
+    endpoints=[source_asu_url(source,host) for host in ASU_ENDPOINTS]
+    endpoints.append(source_url(source))  # original TAP as final bounded fallback
+    failures=[]
+    for url in endpoints:
+        for attempt in range(2):
+            try:
+                req=urllib.request.Request(url,headers={
+                    "User-Agent":"CosmosExplorer/0.9 (bounded astronomy sample)",
+                    "Accept":"text/tab-separated-values,text/csv,application/xml"})
+                with urllib.request.urlopen(req,timeout=20) as res:
+                    if res.status!=200:raise ValueError("HTTP "+str(res.status))
+                    raw=res.read(1300001)
+                    if len(raw)>1300000:raise ValueError("Oversized VizieR response")
+                    text=raw.decode("utf-8-sig")
+                # Validate BEFORE returning the response; if one mirror serves
+                # malformed HTML/errors, try another without touching outputs.
+                normalize(source,text)
+                print("Verified VizieR response:",urllib.parse.urlparse(url).netloc,
+                      "sample source:",source)
+                return text
+            except (OSError,TimeoutError,ValueError,UnicodeDecodeError,
+                    urllib.error.URLError,ET.ParseError) as exc:
+                failures.append(urllib.parse.urlparse(url).netloc+": "+str(exc)[:130])
+                if attempt==0:time.sleep(.75)
+    raise RuntimeError("No validated VizieR mirror for "+source+": "+"; ".join(failures))
+
 def self_test():
     for name,cfg in TABLES.items():
         row=dict(zip(cfg["columns"],[""]*len(cfg["columns"])))
@@ -124,7 +186,13 @@ def self_test():
             normalize(name,raw+lines[1]+"\n")
             raise AssertionError("duplicate not detected")
         except ValueError:pass
-    print("VizieR GALAH and APOGEE adapters passed offline invariants")
+            # Real ASU TSV includes metadata comments, a header and a separator row.
+        cols=list(cfg["columns"])
+        tsv="# VizieR archive sample\\n"+"\\t".join(cols)+"\\n"+"\\t".join(["----"]*len(cols))+"\\n"
+        tsv+="\\n".join("\\t".join(dict(zip(cols,line.split(","))).get(k,"") for k in cols) for line in lines[1:])+"\\n"
+        assert normalize(name,tsv)["counts"]["sample_rows"]==20
+        assert set(cfg["columns"]).issubset(set(from_asu_tsv(tsv,name).splitlines()[0].split(",")))
+    print("VizieR GALAH and APOGEE adapters passed offline invariants (CSV, TSV, duplicates, IDs)")
 def main():
     p=argparse.ArgumentParser();p.add_argument("--source",choices=TABLES);p.add_argument("--self-test",action="store_true")
     a=p.parse_args()
