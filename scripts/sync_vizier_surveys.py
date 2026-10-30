@@ -44,17 +44,17 @@ def source_asu_url(source,endpoint):
 def from_asu_tsv(raw,source):
     """VizieR ASU text begins with # comments, then tab headers and a units row."""
     cfg=TABLES[source]
-    lines=[line.rstrip("\\r") for line in raw.lstrip("\\ufeff").splitlines()
+    lines=[line.rstrip("\r") for line in raw.lstrip("\ufeff").splitlines()
            if line.strip() and not line.lstrip().startswith("#")]
     if not lines:
         raise ValueError("Empty/error VizieR ASU response")
     header=next((i for i,line in enumerate(lines)
-                 if set(cfg["columns"]).issubset(set(x.strip() for x in line.split("\\t")))),None)
+                 if set(cfg["columns"]).issubset(set(x.strip() for x in line.split("\t")))),None)
     if header is None:raise ValueError("VizieR ASU response missing published column names")
-    fields=[c.strip() for c in lines[header].split("\\t")]
+    fields=[c.strip() for c in lines[header].split("\t")]
     buf=io.StringIO();writer=csv.writer(buf);writer.writerow(fields)
     for line in lines[header+1:]:
-        parts=line.split("\\t")
+        parts=line.split("\t")
         if len(parts)!=len(fields):raise ValueError("VizieR ASU response row/header mismatch")
         if all(not c.strip() or set(c.strip())=={"-"} for c in parts):
             continue
@@ -188,8 +188,8 @@ def self_test():
         except ValueError:pass
             # Real ASU TSV includes metadata comments, a header and a separator row.
         cols=list(cfg["columns"])
-        tsv="# VizieR archive sample\\n"+"\\t".join(cols)+"\\n"+"\\t".join(["----"]*len(cols))+"\\n"
-        tsv+="\\n".join("\\t".join(dict(zip(cols,line.split(","))).get(k,"") for k in cols) for line in lines[1:])+"\\n"
+        tsv="# VizieR archive sample\n"+"\t".join(cols)+"\n"+"\t".join(["----"]*len(cols))+"\n"
+        tsv+="\n".join("\t".join(dict(zip(cols,line.split(","))).get(k,"") for k in cols) for line in lines[1:])+"\n"
         assert normalize(name,tsv)["counts"]["sample_rows"]==20
         assert set(cfg["columns"]).issubset(set(from_asu_tsv(tsv,name).splitlines()[0].split(",")))
     print("VizieR GALAH and APOGEE adapters passed offline invariants (CSV, TSV, duplicates, IDs)")
