@@ -143,6 +143,100 @@ body{max-width:100%;overflow-x:clip}
 }
 @media(max-width:380px){.tag{display:none}html[data-mode="system"] .host-tools button{font-size:11px;padding:6px}}
 @media(max-width:760px) and (orientation:landscape) and (max-height:550px){.frame>.stage,html[data-mode="system"] .frame>.stage{height:clamp(230px,65dvh,380px)}}
+
+/* iPhone first-screen controls: 2026-10-30
+ * The old 48dvh canvas + search + controls exceeded the visible phone screen.
+ * Keep the primary controls together; size the scene to the space left over.
+ * Include landscape phones even if their CSS width exceeds 760px. */
+@media (max-width:760px), (max-width:1100px) and (max-height:550px) and (pointer:coarse) {
+ html,body{width:100%;max-width:100%;overflow-x:clip}
+ .frame{display:flex;flex-direction:column;align-items:stretch;width:100%;min-width:0;height:auto;min-height:100svh}
+ .frame>header{
+  order:0;display:flex;flex-direction:column;align-items:stretch;
+  gap:4px;padding:6px 10px 5px;flex:0 0 auto;min-width:0
+ }
+ .frame>header h1{font-size:17px;line-height:1.2;margin:0}
+ .frame>header>div:first-child p{display:none}
+ .frame>header .header-actions{margin:0;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;width:100%;align-items:center;min-width:0}
+ .frame>header .quick-mode{display:flex;align-items:center;gap:6px;min-width:0;width:100%;font-size:11px}
+ .frame>header .quick-mode select{display:block;flex:1 1 auto;min-width:0;width:100%;max-width:100%;height:36px;min-height:36px;font-size:14px;padding:4px}
+ .frame>header .quick-help{display:block;min-width:0;margin:0}
+ .frame>header .quick-help summary{white-space:nowrap;padding:8px 6px;font-size:11px}
+ .frame>header .tag{display:none}
+ .frame>.stage{
+  order:1;flex:0 0 auto;width:100%;height:var(--cosmos-stage-mobile-height, 32svh)!important;
+  min-height:0!important;max-height:none!important;overflow:hidden
+ }
+ .frame>.navigation-controls{
+  order:2;flex:0 0 auto;width:100%;display:grid;gap:2px;
+  padding:5px 10px 4px;min-width:0
+ }
+ .frame>.navigation-controls .navrow{display:grid;grid-template-columns:70px minmax(0,1fr);gap:0 6px;align-items:center;min-width:0}
+ .frame>.navigation-controls .navrow label{font-size:11px;line-height:1.2}
+ .frame>.navigation-controls .navrow input[type=range]{margin:0;min-width:0;width:100%;height:26px}
+ .frame>.navigation-controls .navrow output{
+  display:block;grid-column:2;font-size:10px;text-align:left;line-height:13px;
+  overflow:hidden;white-space:nowrap;text-overflow:ellipsis;min-width:0
+ }
+ .frame>.navigation-controls .scale-ticks,.frame>.navigation-controls #qualityBadge{display:none}
+ .frame>.controls{
+  order:3;flex:0 0 auto;width:100%;display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 6px;
+  align-items:center;padding:5px 10px max(6px,env(safe-area-inset-bottom));
+  min-width:0
+ }
+ .frame>.controls>button{grid-column:1;min-width:0;min-height:36px;font-size:12px;padding:5px}
+ .frame>.controls>label[for=speed]{grid-column:2;justify-self:end;font-size:11px}
+ .frame>.controls>select#speed{grid-column:3;min-width:0;width:100%;max-width:100%;min-height:36px;padding:4px;font-size:11px}
+ .frame>.controls>.check{font-size:11px;line-height:1.15;min-width:0;min-height:28px;justify-content:center}
+ .frame>.controls>.check input{flex:0 0 auto}
+ .frame>.constellation-tools{order:5;min-width:0;width:100%;padding:10px}
+ .frame>.host-tools{order:6;min-width:0;width:100%;padding:10px;gap:7px}
+ .frame>.left{order:7;min-width:0;width:100%;padding:12px;border-right:0;border-top:1px solid var(--line)}
+ .frame>.right{order:8;min-width:0;width:100%;padding:12px;border-left:0;border-top:1px solid var(--line)}
+ .frame>.footer-note{order:9;min-width:0;width:100%}
+ .frame>aside{overflow:visible}
+ .frame>.stage .stage-actions{right:6px;top:6px;left:auto;max-width:calc(100% - 12px)}
+ .frame>.stage .stage-actions button{min-height:36px;padding:5px 7px!important;font-size:11px!important}
+ .frame>.stage #sceneStatus{top:47px;left:8px;max-width:calc(100% - 16px)}
+ .frame>.stage #stageNote{left:7px;right:7px;bottom:7px;max-height:47px;overflow:hidden;font-size:10px;line-height:1.25;padding:5px 7px}
+ .frame>.host-tools input,.frame>.host-tools select{box-sizing:border-box;min-width:0;max-width:100%}
+ .frame>.source-audit-scroll{max-width:100%;overflow-x:auto}
+ html[data-mode="system"] .frame>.host-tools{
+  order:1;display:grid;grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;gap:3px 6px;padding:5px 10px
+ }
+ html[data-mode="system"] .host-tools>label{grid-column:1/-1;font-size:11px}
+ html[data-mode="system"] .host-tools input{grid-column:1/-1;min-width:0;width:100%;min-height:35px;font-size:13px}
+ html[data-mode="system"] .host-tools select{grid-column:1;min-width:0;width:100%;min-height:36px;font-size:12px}
+ html[data-mode="system"] .host-tools button{grid-column:2;min-height:36px;font-size:11px;padding:4px 7px;white-space:nowrap}
+ html[data-mode="system"] .host-tools .host-note{display:none}
+ html[data-mode="system"] .frame>.stage{order:2}
+ html[data-mode="system"] .frame>.navigation-controls{order:3}
+ html[data-mode="system"] .frame>.controls{order:4}
+}
+@media (max-width:1100px) and (max-height:550px) and (orientation:landscape) and (pointer:coarse){
+ .frame>header{flex-direction:row;align-items:center;gap:8px;padding:3px 8px}
+ .frame>header h1{white-space:nowrap;font-size:15px}
+ .frame>header .header-actions{flex:1;grid-template-columns:minmax(0,1fr) auto}
+ .frame>header .quick-mode{font-size:10px}
+ .frame>header .quick-mode select{height:32px;min-height:32px}
+ .frame>header .quick-help summary{padding:6px;font-size:10px}
+ .frame>.navigation-controls{gap:0;padding:3px 8px}
+ .frame>.navigation-controls .navrow{grid-template-columns:72px minmax(0,1fr) 150px;gap:5px}
+ .frame>.navigation-controls .navrow output{grid-column:3;white-space:nowrap;line-height:1.15}
+ .frame>.navigation-controls .navrow input[type=range]{height:23px}
+ .frame>.controls{display:flex;flex-wrap:nowrap;gap:8px;padding:3px 8px}
+ .frame>.controls>*{flex:0 1 auto}
+ .frame>.controls>.check{min-height:28px}
+ html[data-mode="system"] .frame>.host-tools{
+  display:flex;flex-wrap:nowrap;gap:6px;padding:3px 8px
+ }
+ html[data-mode="system"] .host-tools>label{white-space:nowrap;font-size:10px}
+ html[data-mode="system"] .host-tools input{flex:1 1 auto;width:25%;min-width:60px}
+ html[data-mode="system"] .host-tools select{flex:1 1 auto;width:25%;min-width:60px}
+ html[data-mode="system"] .host-tools button{flex:0 0 auto}
+}
 </style></head><body><div class="frame"><header><div><h1>Cosmos Explorer <span style="font-size:12px;color:#92e5f0">v3.2 · 3D</span></h1><p>From measured planetary motion to nearby stellar astrometry, galaxies, the observable horizon and black-hole geometry</p></div><div class="header-actions"><label class="quick-mode" for="quickMode">Jump to view<select id="quickMode" aria-label="Jump directly to a 3D view"><option>Loading views…</option></select></label><details class="quick-help"><summary>How to explore</summary><p>Choose a view, drag or swipe the 3D scene to orbit, and scroll or pinch to zoom. Use Space scale to travel from the Solar System to the observable universe. Time is view-dependent: measured ephemerides, limited estimated motion, or illustrative scenarios are labeled separately. Select an object for its source and limitations.</p></details><span class="tag">OBSERVED · CALCULATED · ILLUSTRATED</span></div></header>
 <aside class="left"><h2>Jump to a view</h2><div class="navlist" id="modes"></div><h3>Objects in this view</h3><div class="objects" id="objects"></div><div class="hr"></div><p class="legend">Drag to orbit the camera. Scroll or pinch to zoom. Select an object to inspect its data and mathematical model.</p><p class="legend"><strong>Important:</strong> these are separate physical scales. Solar-system display spacing is compressed nonlinearly while reported AU measurements remain physical. Space scale uses level-of-detail transitions between scenes, with logarithmic zoom within scenes; it is not yet a single physically metric all-scale render.</p></aside>
 <main class="stage" id="stage"><canvas id="scene" aria-label="Interactive three-dimensional space visualization"></canvas><div class="objectlabels" id="objectlabels" aria-hidden="true"></div><div id="sceneStatus" role="status">Loading Three.js renderer…</div><div class="stage-actions"><button type="button" id="topButton">Top view</button><button type="button" id="resetButton">Reset camera</button></div><div id="systemEmptyHint" class="empty-scene-hint" hidden><strong>Select a planetary system</strong>Use the search above to find confirmed exoplanets and explore their host star.</div><div id="stageNote">Object sizes exaggerated; distances use the units and visual compression stated for each view.</div></main>
@@ -744,5 +838,46 @@ el('hostSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDef
 el('inspectSelectedSystem').addEventListener('click',()=>openHost(el('inspectSelectedSystem').dataset.host));el('quickMode').addEventListener('change',e=>setMode(e.target.value));
 function frame(ms){const dt=clockPrev?Math.min(.1,(ms-clockPrev)/1000):0;clockPrev=ms;if(state.playing&&TIME_RANGES[state.mode]){advanceTime(dt*state.speed);if(ms-lastInfo>220){updateDetails();lastInfo=ms;}}if(ms-lastLabels>80){refreshLabels();lastLabels=ms;}renderer.render(scene,camera);requestAnimationFrame(frame);}requestAnimationFrame(frame);loadConstellationCatalog();loadExoplanetCatalog();loadSourceAudit();
 }
+
+/* Reserve actual visual-viewport space for the controls above the fold on phones.
+   Layout and current view are observed, so rotation and Safari toolbar changes
+   do not require resetting the camera. All native inputs remain single-instance. */
+function installMobileFirstScreenFit(){
+ const query=window.matchMedia('(max-width:760px), (max-width:1100px) and (max-height:550px) and (pointer:coarse)');
+ const rootEl=document.documentElement;
+ const frame=document.querySelector('.frame');
+ const header=frame.querySelector(':scope > header');
+ const nav=frame.querySelector(':scope > .navigation-controls');
+ const controls=frame.querySelector(':scope > .controls');
+ const hosts=frame.querySelector(':scope > .host-tools');
+ let pending=false,lastHeight=null;
+ function fit(){
+  pending=false;
+  if(!query.matches){
+   rootEl.style.removeProperty('--cosmos-stage-mobile-height');
+   lastHeight=null;return;
+  }
+  const visibleHeight=window.visualViewport?.height||window.innerHeight;
+  const heightOf=node=>Math.ceil(node.getBoundingClientRect().height);
+  const searchHeight=rootEl.dataset.mode==='system'?heightOf(hosts):0;
+  const reserved=heightOf(header)+heightOf(nav)+heightOf(controls)+searchHeight+10;
+  const available=Math.floor(visibleHeight-reserved);
+  const minScene=visibleHeight<500?95:145;
+  const desired=Math.max(minScene,Math.min(560,available));
+  if(lastHeight!==desired){
+   rootEl.style.setProperty('--cosmos-stage-mobile-height',desired+'px');
+   lastHeight=desired;
+  }
+ }
+ function schedule(){if(pending)return;pending=true;requestAnimationFrame(fit);}
+ for(const node of [header,nav,controls,hosts])new ResizeObserver(schedule).observe(node);
+ new MutationObserver(schedule).observe(rootEl,{attributes:true,attributeFilter:['data-mode']});
+ window.visualViewport?.addEventListener('resize',schedule,{passive:true});
+ window.addEventListener('resize',schedule,{passive:true});
+ window.addEventListener('orientationchange',schedule,{passive:true});
+ query.addEventListener?.('change',schedule);
+ schedule();
+}
+installMobileFirstScreenFit();
 try{const module=await import('https://cdn.jsdelivr.net/npm/three@0.180.0/+esm');boot(module);}catch(err){console.error(err);el('sceneStatus').style.display='block';el('sceneStatus').textContent='Unable to load Three.js. This 3D version needs a browser with internet access. The original offline canvas model remains available separately.';el('desc').textContent='Planet ephemeris data are bundled in the HTML, but 3D rendering requires the Three.js JavaScript module to load.';}
 </script></body></html>
