@@ -35,6 +35,9 @@ try {
     await page.locator('#quickMode').selectOption('system');
     await page.waitForFunction(() => document.querySelector('#selectedName')?.textContent === 'TRAPPIST-1', { timeout: 30000 });
     await page.waitForFunction(() => document.querySelector('#systemEmptyHint')?.hidden === true, { timeout: 30000 });
+    // Mode switches update the DOM immediately, but mobile stage fitting runs
+    // on the following animation frame. Inspect only after it settles.
+    await page.waitForTimeout(140);
     const data = await page.evaluate(() => {
       const box = id => document.getElementById(id).getBoundingClientRect();
       const header = box('quickMode'), search = box('hostSearch'), stage = box('stage'), nav = box('scaleSlider'), canvas = box('scene');
