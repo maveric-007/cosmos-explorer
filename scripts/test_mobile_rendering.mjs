@@ -49,7 +49,7 @@ try {
       };
     });
     assert.ok(data.htmlWidth <= data.clientWidth + 2, `${width}px: horizontal overflow (${data.htmlWidth}/${data.clientWidth})`);
-    assert.ok(data.stageHeight >= 230, `${width}px: stage collapsed`);
+    assert.ok(data.stageHeight >= (width <= 760 || landscape ? 90 : 230), `${width}px: stage collapsed`);
     assert.ok(Math.abs(data.stageWidth - data.canvasWidth) <= 2, `${width}px: canvas width mismatch`);
     assert.ok(Math.abs(data.stageHeight - data.canvasHeight) <= 2, `${width}px: canvas height mismatch`);
     assert.ok(data.hostCount > 0 && data.fieldVisible, `${width}px: system search unusable`);
@@ -91,6 +91,23 @@ try {
     await page.waitForFunction(() => document.querySelector('#selectedName')?.textContent === 'Proxima Centauri');
     const local = await page.evaluate(() => ({width:document.documentElement.scrollWidth,client:document.documentElement.clientWidth}));
     assert.ok(local.width <= local.client + 2, `${width}px: nearby-star overflow`);
+
+    if (width <= 760 || landscape) {
+      // The ordinary nearby-star view must also keep the main controls above
+      // the fold, and the hidden system search must not steal their space.
+      await page.waitForTimeout(80);
+      const ordinary = await page.evaluate(() => {
+        const r=id=>document.getElementById(id).getBoundingClientRect();
+        return {bottom:r('playPause').bottom, scale:r('scaleSlider').top,
+          top:r('stage').top, height:r('stage').height,
+          viewport:window.visualViewport?.height||window.innerHeight};
+      });
+      assert.ok(ordinary.bottom <= ordinary.viewport + 12,
+        `${width}x${height}: nearby-star playback below visible phone screen (${ordinary.bottom}/${ordinary.viewport})`);
+      assert.ok(ordinary.scale >= ordinary.top,
+        `${width}x${height}: nearby-star slider before canvas unexpectedly`);
+    }
+
     console.log(JSON.stringify({ viewport: width, status: 'PASS', planetaryHost: data.systemSelected, systemSearchBeforeScene: width <= 760 || landscape, stageHeight: data.stageHeight }));
     await context.close();
   }
