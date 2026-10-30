@@ -50,7 +50,7 @@ def normalize(raw, min_count=20):
     # IRSA returns catalog column aliases in the requested schema.
     columns = {key.strip().lower():key for key in reader.fieldnames}
     if set(FIELDS) - columns.keys():
-        raise ValueError("Unexpected IRSA NEOWISE columns: " + repr(sorted(set(FIELDS)-columns.keys())))
+        raise ValueError("Unexpected IRSA NEOWISE columns: " + repr(sorted(set(FIELDS)-columns.keys())) + "; returned header=" + repr(reader.fieldnames)[:450] + "; payload prefix=" + repr(raw[:180]))
     records = []
     ids = set()
     for row in reader:
