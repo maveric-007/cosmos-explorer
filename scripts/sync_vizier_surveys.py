@@ -85,7 +85,7 @@ def from_votable(raw):
 def normalize(source,raw,minimum=10):
     cfg=TABLES[source]
     if raw.lstrip().startswith("<"):raw=from_votable(raw)
-    elif "\\t" in raw and raw.lstrip().startswith("#"):raw=from_asu_tsv(raw,source)
+    elif "\t" in raw and raw.lstrip().startswith("#"):raw=from_asu_tsv(raw,source)
     rd=csv.DictReader(io.StringIO(raw.lstrip("\ufeff")))
     if set(cfg["columns"])-set(rd.fieldnames or []):
         raise ValueError("Missing published VizieR source columns: "+str(sorted(set(cfg["columns"])-set(rd.fieldnames or []))))
