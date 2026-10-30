@@ -22,7 +22,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 BASE = "https://irsa.ipac.caltech.edu/TAP/sync"
 TABLE = "neowisesbpropv2"
 FIELDS = ("asteroid_number", "prov_desig", "mean_jd", "fit_code",
-          "diameter", "diameter_err", "v_albedo", "v_albedo_err", "pds_ref_code")
+          "diameter", "diameter_err", "v_albedo", "v_albedo_err")
 SCHEMA = "cosmos-explorer-neowise-properties-sample-v1"
 STATUS_SCHEMA = "cosmos-explorer-neowise-sync-status-v1"
 COUNT = 200
@@ -93,7 +93,7 @@ def normalize(raw, min_count=20):
         if diameter is None and visible_albedo is None:
             raise ValueError("Physical-property sample contains neither diameter nor albedo")
         # Different observations/fits may exist for the same asteroid.
-        uid = "|".join([number,designation,str(jd),val["pds_ref_code"],val["fit_code"]])
+        uid = "|".join([number,designation,str(jd),val["fit_code"]])
         if uid in ids:
             raise ValueError("Repeated NEOWISE property-fit identifier")
         ids.add(uid)
@@ -106,7 +106,7 @@ def normalize(raw, min_count=20):
             "visible_albedo_uncertainty":albedo_err,
             "fit_code":val["fit_code"] or None,
             "diameter_was_fitted":"D" in val["fit_code"] if val["fit_code"] else None,
-            "pds_publication_reference":val["pds_ref_code"] or None})
+            "pds_publication_reference":None})
     if not min_count <= len(records) <= COUNT:
         raise ValueError("NEOWISE sample unexpectedly empty or truncated")
     return {
