@@ -28,6 +28,8 @@ SOURCES = {
     "apogee_dr17": ("apogee_dr17-sample.json", "records", False),
     "jpl_sbdb": ("jpl-sbdb-sample.json", "objects", True),
     "jpl_horizons": ("jpl-horizons-sample.json", "bodies", True),
+    "neowise": ("neowise-sample.json", "records", False),
+    "mpc": ("mpc-orbits-sample.json", "records", False),
 }
 SCHEMA = "cosmos-explorer-unified-observation-index-v1"
 
@@ -116,6 +118,12 @@ def build(data_dir):
         elif source == "jpl_sbdb":
             if obj.get("schema") != "cosmos-explorer-jpl-sbdb-sample-v1":
                 raise ValueError("JPL SBDB schema mismatch")
+        elif source == "neowise":
+            if obj.get("schema") != "cosmos-explorer-neowise-properties-sample-v1":
+                raise ValueError("NEOWISE sample schema mismatch")
+        elif source == "mpc":
+            if obj.get("schema") != "cosmos-explorer-mpc-orbits-sample-v1":
+                raise ValueError("MPC orbit schema mismatch")
         elif source == "jpl_horizons":
             if (obj.get("schema") != "cosmos-explorer-jpl-horizons-snapshot-v1"
                     or obj.get("reference_frame") != "ICRF"
@@ -169,6 +177,25 @@ def build(data_dir):
             elif source == "apogee_dr17":
                 emit(source, item["source_row_id"], "spectral_catalog_entry",
                      item.get("ra_deg"), item.get("dec_deg"))
+            elif source == "neowise":
+                # Thermal-model diameter and albedo cannot be converted to mass.
+                emit(source, item["source_row_id"], "small_body_physical_property_fit", None, None,
+                     asteroid_number=item.get("asteroid_number"),
+                     provisional_designation=item.get("provisional_designation"),
+                     mean_julian_day=number(item.get("mean_julian_day"), 2000000, 3000000),
+                     diameter_km_catalog=number(item.get("diameter_km"), 0),
+                     diameter_error_km=number(item.get("diameter_uncertainty_km"), 0),
+                     visible_albedo=number(item.get("visible_geometric_albedo"), 0, 2),
+                     fit_code=item.get("fit_code"),
+                     diameter_was_fitted=item.get("diameter_was_fitted"))
+            elif source == "mpc":
+                # Keep orbital conventions/epoch in the separately hashed MPC
+                # source snapshot; do not re-label as sky/Cartesian positions.
+                if not isinstance(item.get("mpc_orb"),dict) or not item["mpc_orb"]:
+                    raise ValueError("MPC orbit record missing authoritative payload")
+                emit(source, item["source_row_id"], "mpc_orbit_solution_reference", None, None,
+                     name=item.get("designation_queried"),
+                     source_record_file="data/mpc-orbits-sample.json")
             elif source == "jpl_sbdb":
                 # Orbital elements do not imply a fixed equatorial sky position.
                 emit(source, item["spkid"], "small_body_orbit_solution", None, None,
@@ -224,7 +251,9 @@ def build(data_dir):
                         "Infrared detections can be nonstellar; DESI redshift is not a Euclidean distance.",
                         "NASA composite host identifier may represent a multiple-star system.",
                         "JPL Horizons vectors are model-derived barycentric ephemerides only at their stated epoch.",
-                        "JPL SBDB asteroid elements do not specify instantaneous sky positions or unknown masses."],
+                        "JPL SBDB asteroid elements do not specify instantaneous sky positions or unknown masses.",
+                        "NEOWISE radiometric fits cannot be used to infer unknown masses.",
+                        "MPC orbital representations retain source-specific frames and epochs."],
             "input_manifest": manifest,
             "counts": {"indexed_records": len(rows), "by_source": counts,
                        "published_id_links": len(links), "unresolved_records": len(rows) - len({v["from"] for v in links})},
@@ -267,6 +296,13 @@ def self_test():
                                                   "primary_designation": "1", "epoch_jd_tdb": 2461200.5,
                                                   "semimajor_axis_au": 2.7, "eccentricity": 0.08,
                                                   "gm_km3_s2_catalog": None}]},
+            "neowise-sample.json": {"schema": "cosmos-explorer-neowise-properties-sample-v1",
+                                    "records": [{"source_row_id": "1||2456966|DV--", "asteroid_number": "1",
+                                                 "mean_julian_day": 2456966, "diameter_km": 8,
+                                                 "diameter_was_fitted": True}]},
+            "mpc-orbits-sample.json": {"schema": "cosmos-explorer-mpc-orbits-sample-v1",
+                                       "records": [{"source_row_id": "ceres", "designation_queried": "Ceres",
+                                                    "mpc_orb": {"COM": {"coefficient_names": ["e"]}}}]},
             "jpl-horizons-sample.json": {"schema": "cosmos-explorer-jpl-horizons-snapshot-v1",
                                         "reference_frame": "ICRF",
                                         "origin": "Solar System Barycenter (500@0)",
@@ -279,10 +315,13 @@ def self_test():
         for filename, fixture in fixtures.items():
             (p / filename).write_text(json.dumps(fixture), encoding="utf-8")
         index = build(p)
-        assert index["counts"]["indexed_records"] == 11
+        assert index["counts"]["indexed_records"] == 13
         assert index["counts"]["published_id_links"] == 2
         assert index["counts"]["by_source"]["jpl_sbdb"] == 1
         assert index["counts"]["by_source"]["jpl_horizons"] == 1
+        assert index["counts"]["by_source"]["neowise"] == 1
+        assert index["counts"]["by_source"]["mpc"] == 1
+        assert next(r for r in index["records"] if r["source"]=="neowise")["ra_deg"] is None
         assert next(r for r in index["records"] if r["id"] == "jpl_sbdb:20000001")["ra_deg"] is None
         assert "gm_km3_s2_catalog" not in next(r for r in index["records"] if r["id"] == "jpl_sbdb:20000001")
         assert next(r for r in index["records"] if r["id"] == "jpl_horizons:10")["velocity_km_s_icrf_ssb"] == [0.01, 0.02, 0.03]
