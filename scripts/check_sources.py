@@ -141,6 +141,55 @@ def run(registry_path=REGISTRY, status_path=STATUS, nasa_path=NASA):
             else:
                 entry["check_status"] = "adapter_configured_not_imported"
                 entry["method"] = "Bounded importer configured; no verified data yet"
+        elif key in ("galah_dr4","apogee_dr17","neowise","mpc","jpl_sbdb","jpl_horizons") and (BASE / ("data/" + {
+            "galah_dr4": "galah_dr4",
+            "apogee_dr17": "apogee_dr17",
+            "neowise": "neowise",
+            "mpc": "mpc-orbits",
+            "jpl_sbdb": "jpl-sbdb",
+            "jpl_horizons": "jpl-horizons"
+        }[key] + "-sync-status.json")).exists():
+            prefix={
+                "galah_dr4":"galah_dr4","apogee_dr17":"apogee_dr17",
+                "neowise":"neowise","mpc":"mpc-orbits",
+                "jpl_sbdb":"jpl-sbdb","jpl_horizons":"jpl-horizons"
+            }[key]
+            expected={
+                "galah_dr4":"cosmos-explorer-vizier-survey-status-v1",
+                "apogee_dr17":"cosmos-explorer-vizier-survey-status-v1",
+                "neowise":"cosmos-explorer-neowise-sync-status-v1",
+                "mpc":"cosmos-explorer-mpc-orbits-sync-status-v1",
+                "jpl_sbdb":"cosmos-explorer-jpl-sbdb-sync-status-v1",
+                "jpl_horizons":"cosmos-explorer-jpl-horizons-sync-status-v1"
+            }[key]
+            snapshot={
+                "galah_dr4":"galah_dr4-sample.json",
+                "apogee_dr17":"apogee_dr17-sample.json",
+                "neowise":"neowise-sample.json",
+                "mpc":"mpc-orbits-sample.json",
+                "jpl_sbdb":"jpl-sbdb-sample.json",
+                "jpl_horizons":"jpl-horizons-sample.json"
+            }[key]
+            official = json.loads((BASE / ("data/" + prefix + "-sync-status.json")).read_text(encoding="utf-8"))
+            actual_data = BASE / ("data/" + snapshot)
+            if official.get("schema") != expected or not actual_data.exists():
+                raise ValueError("Status exists without verified source snapshot: "+key)
+            snapshot_data=json.loads(actual_data.read_text(encoding="utf-8"))
+            if not snapshot_data.get("schema") or not official.get("last_imported_utc"):
+                raise ValueError("Incomplete source ingest status: "+key)
+            checked=official.get("last_checked_utc")
+            entry.update({
+                "last_checked_utc":checked,
+                "last_successful_check_utc":checked,
+                "last_imported_utc":official["last_imported_utc"],
+                "publisher_release_utc":official.get("publisher_release_utc"),
+                "check_status":official.get("check_status"),
+                "counts":official.get("counts") or {
+                    "sample_records":official.get("count",official.get("source_row_count",snapshot_data.get("row_count")))},
+                "method":"Validated source-specific import, bounded subset",
+                "import_state":"bounded_sample_ingested",
+                "error":None
+            })
         else:
             checked = now_utc()
             outcome = probe(source["official_url"])
