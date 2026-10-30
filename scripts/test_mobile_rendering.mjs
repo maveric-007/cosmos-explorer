@@ -66,7 +66,7 @@ try {
     const cockpit = await page.evaluate(() => {
       const bounds = id => {
         const r=document.getElementById(id).getBoundingClientRect();
-        return { left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width };
+        return { left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height };
       };
       const viewportWidth = document.documentElement.clientWidth;
       const viewportHeight = window.visualViewport?.height || window.innerHeight;
