@@ -16,6 +16,7 @@ import tempfile
 import os
 import urllib.parse
 import urllib.request
+import xml.etree.ElementTree as ET
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 BASE = "https://irsa.ipac.caltech.edu/TAP/sync"
@@ -43,7 +44,28 @@ def num(value, lower=None, upper=None):
         raise ValueError("Invalid physical/epoch quantity")
     return f
 
+def from_votable(raw):
+    root=ET.fromstring(raw)
+    for node in root.iter():
+        if node.tag.split("}")[-1] == "INFO" and node.attrib.get("name") == "QUERY_STATUS":
+            if node.attrib.get("value") not in ("OK","OVERFLOW"):
+                raise ValueError("IRSA TAP query rejected: " + repr("".join(node.itertext()).strip())[:550])
+    table=next((n for n in root.iter() if n.tag.split("}")[-1]=="TABLE"),None)
+    if table is None:
+        raise ValueError("IRSA TAP VOTable has no data table: " + raw[:600])
+    fields=[n.attrib.get("name") for n in table if n.tag.split("}")[-1]=="FIELD"]
+    if not fields:raise ValueError("Missing IRSA VOTable column names")
+    stream=io.StringIO();writer=csv.writer(stream);writer.writerow(fields)
+    for tr in table.iter():
+        if tr.tag.split("}")[-1]!="TR":continue
+        vals=["".join(td.itertext()).strip() for td in tr if td.tag.split("}")[-1]=="TD"]
+        if len(vals)!=len(fields):raise ValueError("IRSA VOTable inconsistent row width")
+        writer.writerow(vals)
+    return stream.getvalue()
+
 def normalize(raw, min_count=20):
+    if raw.lstrip().startswith("<?xml") or raw.lstrip().startswith("<VOTABLE"):
+        raw=from_votable(raw)
     reader = csv.DictReader(io.StringIO(raw.lstrip("\ufeff")))
     if not reader.fieldnames:
         raise ValueError("Missing IRSA CSV headers")
@@ -140,6 +162,11 @@ def self_test():
             normalize(raw+raw.splitlines()[1]+"\n")
         except ValueError:pass
         else:raise AssertionError("Duplicate physical fit not caught")
+    # TAP returns VOTables by default even when CSV was requested.
+    xml='<VOTABLE><RESOURCE><INFO name="QUERY_STATUS" value="ERROR">Unknown table</INFO></RESOURCE></VOTABLE>'
+    try:normalize(xml)
+    except ValueError as ex:assert "Unknown table" in str(ex)
+    else:raise AssertionError("IRSA query error disguised as source records")
     print("NEOWISE schema, units, identifiers, completeness and idempotency OK")
 
 def main():
