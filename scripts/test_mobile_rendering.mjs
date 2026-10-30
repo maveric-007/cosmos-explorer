@@ -74,6 +74,14 @@ try {
         search:bounds('hostSearch'),stage:bounds('stage'),interactive,
         mobile:matchMedia('(max-width:760px), (max-width:1100px) and (max-height:550px) and (pointer:coarse)').matches };
     });
+    const breakdown = await page.evaluate(() => {
+      const rect = selector => {const r=document.querySelector(selector).getBoundingClientRect();return {top:+r.top.toFixed(1),bottom:+r.bottom.toFixed(1),height:+r.height.toFixed(1)};};
+      return {header:rect('.frame>header'),host:rect('.frame>.host-tools'),stage:rect('#stage'),
+        navigation:rect('.frame>.navigation-controls'),controls:rect('.frame>.controls'),
+        visualHeight:window.visualViewport?.height,innerHeight:window.innerHeight,
+        stageCSS:getComputedStyle(document.documentElement).getPropertyValue('--cosmos-stage-mobile-height')};
+    });
+    console.log(JSON.stringify({viewport:`${width}x${height}`,mode:'system',breakdown}));
     for (const control of cockpit.interactive)
       assert.ok(control.left >= -3 && control.right <= cockpit.viewportWidth + 3,
         `${width}x${height}: ${control.id} is outside the horizontal viewport [${control.left},${control.right}]`);
