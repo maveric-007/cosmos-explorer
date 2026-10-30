@@ -662,6 +662,7 @@ function setMode(mode,fromScale=false){
  build();
  if(mode!=='blackhole'&&mode!=='system'){el('scaleSlider').value=String(state.scale);el('scaleReadout').textContent=scaleBand(state.scale).caption;applyBandCamera();}
  else el('scaleReadout').textContent=mode==='system'?'Planetary system · AU (zoomed local scale)':'Black-hole spacetime · special view';
+ window.fitCosmosMobileViewport?.();
 }
 function timeLabel(){
  const y=state.timeYears;
@@ -869,6 +870,7 @@ function installMobileFirstScreenFit(){
    lastHeight=desired;
   }
  }
+ window.fitCosmosMobileViewport=fit;
  function schedule(){if(pending)return;pending=true;requestAnimationFrame(fit);}
  for(const node of [header,nav,controls,hosts])new ResizeObserver(schedule).observe(node);
  new MutationObserver(schedule).observe(rootEl,{attributes:true,attributeFilter:['data-mode']});
