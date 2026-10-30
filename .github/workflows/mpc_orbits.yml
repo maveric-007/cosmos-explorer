@@ -1,0 +1,52 @@
+name: Import bounded Minor Planet Center orbit solutions
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "57 10 * * 0"
+  push:
+    paths:
+      - "scripts/sync_mpc_orbits.py"
+      - ".github/workflows/mpc_orbits.yml"
+permissions:
+  contents: write
+concurrency:
+  group: mpc-orbit-snapshots
+  cancel-in-progress: false
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test fail-closed MPC parsing and idempotency
+        run: python scripts/sync_mpc_orbits.py --self-test
+      - name: Fetch four documented MPC orbit solutions
+        run: python scripts/sync_mpc_orbits.py
+      - name: Validate source records and bounded output
+        run: |
+          python - <<'PY'
+          import json,pathlib
+          p=pathlib.Path("data/mpc-orbits-sample.json")
+          v=json.loads(p.read_text())
+          s=json.loads(pathlib.Path("data/mpc-orbits-sync-status.json").read_text())
+          assert v["schema"]=="cosmos-explorer-mpc-orbits-sample-v1"
+          assert v["sample_only"] and v["row_count"]==4
+          assert {r["designation_queried"] for r in v["records"]}=={"Ceres","Vesta","Bennu","Apophis"}
+          assert all(r["mpc_orb"] for r in v["records"])
+          assert p.stat().st_size<350000
+          assert s["last_imported_utc"] and s["normalized_sha256"]
+          PY
+      - name: Commit successful sample without relying on any other source
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/mpc-orbits-sample.json data/mpc-orbits-sync-status.json
+          if ! git diff --cached --quiet; then
+            git commit -m "data: ingest validated MPC selected orbit solutions"
+            git fetch origin main
+            git rebase origin/main
+            git push origin HEAD:main
+          fi
