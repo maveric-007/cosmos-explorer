@@ -97,7 +97,9 @@ try {
       assert.ok(cockpit.search.top < cockpit.stage.top,`${width}x${height}: system search must precede scene`);
     }
     assert.deepEqual(errors, [], `${width}px: runtime exceptions`);
-    await page.screenshot({ path: `artifacts/mobile-smoke/planetary-${width}.png`, fullPage: true });
+    // Viewport-only screenshot: full-page mobile capture can temporarily resize
+    // visualViewport and invalidate subsequent first-screen assertions.
+    await page.screenshot({ path: `artifacts/mobile-smoke/planetary-${width}.png`, fullPage: false });
     await page.locator('#quickMode').selectOption('local');
     await page.waitForFunction(() => document.querySelector('#selectedName')?.textContent === 'Proxima Centauri');
     const local = await page.evaluate(() => ({width:document.documentElement.scrollWidth,client:document.documentElement.clientWidth}));
@@ -111,7 +113,8 @@ try {
         const r=id=>document.getElementById(id).getBoundingClientRect();
         return {bottom:r('playPause').bottom, scale:r('scaleSlider').top,
           top:r('stage').top, height:r('stage').height,
-          viewport:window.visualViewport?.height||window.innerHeight};
+          viewport:window.visualViewport?.height||window.innerHeight,
+          stageCSS:getComputedStyle(document.documentElement).getPropertyValue('--cosmos-stage-mobile-height')};
       });
       assert.ok(ordinary.bottom <= ordinary.viewport + 12,
         `${width}x${height}: nearby-star playback below visible phone screen (${ordinary.bottom}/${ordinary.viewport})`);
