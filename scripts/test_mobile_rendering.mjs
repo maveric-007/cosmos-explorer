@@ -32,6 +32,15 @@ try {
     await page.route('https://raw.githubusercontent.com/maveric-007/cosmos-explorer/main/data/**', route => route.abort());
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.waitForFunction(() => document.querySelector('#sceneStatus')?.textContent?.startsWith('Renderer ready'), { timeout: 60000 });
+    // The main solar-system experience must include the moving Galactic
+    // reference frame, while retaining the source ephemeris Sun-centered view.
+    assert.equal(await page.locator('#quickMode').inputValue(), 'motion', `${width}px: moving Solar System is not default`);
+    assert.match(await page.locator('#dateLabel').textContent(), /425/);
+    await page.locator('#quickMode').selectOption('solar');
+    assert.equal(await page.locator('#selectedName').textContent(), 'Earth');
+    await page.locator('#quickMode').selectOption('motion');
+    assert.equal(await page.locator('#selectedName').textContent(), 'Sun');
+
     await page.locator('#quickMode').selectOption('system');
     await page.waitForFunction(() => document.querySelector('#selectedName')?.textContent === 'TRAPPIST-1', { timeout: 30000 });
     await page.waitForFunction(() => document.querySelector('#systemEmptyHint')?.hidden === true, { timeout: 30000 });
