@@ -858,12 +858,14 @@ function setMode(mode,fromScale=false){
  window.fitCosmosMobileViewport?.();
 }
 function timeLabel(){
- if(state.mode==='solar')return isSampledEphemeris()?dateStr(state.day)+' · shared epoch':
-  epochDescription()+' · Kepler approximation';
- if(state.mode==='motion')return epochDescription()+' · Galactocentric trajectory';
- if(state.mode==='system')return epochDescription()+' · estimated orbital phases';
- if(state.mode==='universe')return cosmosAtLookback(state.lookbackYears).lookbackGyr.toFixed(2)+' Gyr lookback · '+epochDescription();
- return epochDescription()+' · orbit scenario';
+ const epoch=state.epochYears===0?'Oct 2026':(state.epochYears<0?'−':'+')+
+  f(Math.abs(state.epochYears),Math.abs(state.epochYears)<1?2:0)+' yr';
+ if(state.mode==='solar')return isSampledEphemeris()?dateStr(state.day):
+  epoch+' · Kepler model';
+ if(state.mode==='motion')return epoch+' · Galactic motion';
+ if(state.mode==='system')return epoch+' · estimated phases';
+ if(state.mode==='universe')return cosmosAtLookback(state.lookbackYears).lookbackGyr.toFixed(2)+' Gyr lookback · '+epoch+' epoch';
+ return epoch+' · shared epoch';
 }
 function configureTime(){
  const r=TIME_RANGES[state.mode],input=el('dateSlider'),playingAllowed=Boolean(r);
