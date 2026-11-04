@@ -9,6 +9,7 @@ complete AllWISE or 2MASS. Full archives require external partitioned storage.
 import argparse,csv,datetime as dt,hashlib,io,json,math,os,pathlib,tempfile
 import urllib.parse,urllib.request
 
+from http_retry import read_bounded
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 ENDPOINT="https://irsa.ipac.caltech.edu/TAP/sync"
 CENTER_RA,CENTER_DEC,RADIUS_DEG=66.76957,26.10453,0.12
@@ -109,11 +110,7 @@ def fetch(source):
     req=urllib.request.Request(url(source),headers={
        "User-Agent":"CosmosExplorer/0.6 (public astronomy research; bounded API query)",
        "Accept":"text/csv"})
-    with urllib.request.urlopen(req,timeout=140) as response:
-        if response.status!=200:raise ValueError("IRSA TAP HTTP "+str(response.status))
-        raw=response.read(900001)
-        if len(raw)>900000:raise ValueError("unexpectedly large catalog response")
-        raw=raw.decode("utf-8")
+    raw=read_bounded(req,max_bytes=900000,timeout=140,attempts=3).decode("utf-8-sig")
     if raw.lstrip().startswith("<"):raise ValueError("IRSA returned XML/VOTable error, expected CSV")
     return raw
 def self_test():
