@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Bounded MPC orbital-solution snapshots using its published JSON GET-body API.
 
-This is a four-target source verification, NOT the full MPC catalog. MPC orbit
+This is a selected-target source verification, NOT the full MPC catalog. MPC orbit
 solutions are not heliocentric measured positions at the viewer's current date.
 """
 import argparse
@@ -15,7 +15,7 @@ import urllib.request
 
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 URL="https://data.minorplanetcenter.net/api/get-orb"
-TARGETS=("Ceres","Vesta","Bennu","Apophis")
+TARGETS=("Ceres","Vesta","Bennu","Apophis","Sedna","2012 VP113","2015 TG387","2013 FT28","2014 SR349")
 SCHEMA="cosmos-explorer-mpc-orbits-sample-v1"
 DATA=ROOT/"data/mpc-orbits-sample.json"
 AUDIT=ROOT/"data/mpc-orbits-sync-status.json"
@@ -46,7 +46,7 @@ def normalized(raw):
             "source":"Minor Planet Center Orbits API",
             "source_url":URL,
             "request":"HTTP GET with JSON body {'desig': '<one object>'} per call",
-            "sample_only":True,"scope":"Four individually queried selected named objects; not all MPC orbits",
+            "sample_only":True,"scope":"Selected named objects including distant trans-Neptunian candidates; not all MPC orbits",
             "caveat":"MPC orbit representation and epoch must be interpreted from source fields; not current 3D positions.",
             "row_count":len(out),"records":out}
 
@@ -89,7 +89,7 @@ def fetch_one(designation):
 def self_test():
     fixture=[[{"mpc_orb":[{"COM":{"coefficient_names":["e"],"coefficient_values":[.1]}}]}] for _ in TARGETS]
     doc=normalized(fixture)
-    assert doc["row_count"]==4 and doc["records"][2]["designation_queried"]=="Bennu"
+    assert doc["row_count"]==len(TARGETS) and doc["records"][2]["designation_queried"]=="Bennu"
     with tempfile.TemporaryDirectory() as d:
         p=pathlib.Path(d)
         assert sync(fixture,p/"m.json",p/"s.json")["check_status"]=="updated"
