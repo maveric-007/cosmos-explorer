@@ -8,18 +8,18 @@
 export const MOTION_ORBIT_VISUAL_SCALE = 22; // scene units per ln(1 + radius / AU)
 
 export const MOTION_MARKER_SPECS = Object.freeze({
-  Sun:       { minPx:3.6, maxPx:9.0, maxWorldRadius:2.15 },
-  Mercury:   { minPx:2.0, maxPx:3.5, maxWorldRadius:0.75 },
-  Venus:     { minPx:2.2, maxPx:3.8, maxWorldRadius:0.85 },
-  Earth:     { minPx:2.4, maxPx:4.0, maxWorldRadius:0.85 },
-  Mars:      { minPx:2.1, maxPx:3.6, maxWorldRadius:0.75 },
-  Jupiter:   { minPx:3.0, maxPx:5.5, maxWorldRadius:1.25 },
-  Saturn:    { minPx:2.9, maxPx:5.0, maxWorldRadius:1.15 },
-  Uranus:    { minPx:2.5, maxPx:4.5, maxWorldRadius:1.00 },
-  Neptune:   { minPx:2.5, maxPx:4.5, maxWorldRadius:1.00 },
-  'Planet Nine (hypothesis)': { minPx:2.5, maxPx:4.5, maxWorldRadius:1.0 }
+  Sun:       { minPx:3.6, maxPx:9.0, baseWorldRadius:0.70, maxWorldRadius:2.15 },
+  Mercury:   { minPx:2.0, maxPx:3.5, baseWorldRadius:0.09, maxWorldRadius:0.75 },
+  Venus:     { minPx:2.2, maxPx:3.8, baseWorldRadius:0.11, maxWorldRadius:0.85 },
+  Earth:     { minPx:2.4, maxPx:4.0, baseWorldRadius:0.12, maxWorldRadius:0.85 },
+  Mars:      { minPx:2.1, maxPx:3.6, baseWorldRadius:0.10, maxWorldRadius:0.75 },
+  Jupiter:   { minPx:3.0, maxPx:5.5, baseWorldRadius:0.22, maxWorldRadius:1.25 },
+  Saturn:    { minPx:2.9, maxPx:5.0, baseWorldRadius:0.20, maxWorldRadius:1.15 },
+  Uranus:    { minPx:2.5, maxPx:4.5, baseWorldRadius:0.16, maxWorldRadius:1.00 },
+  Neptune:   { minPx:2.5, maxPx:4.5, baseWorldRadius:0.16, maxWorldRadius:1.00 },
+  'Planet Nine (hypothesis)': { minPx:2.5, maxPx:4.5, baseWorldRadius:0.14, maxWorldRadius:1.0 }
 });
-const DEFAULT_SPEC = Object.freeze({ minPx:2, maxPx:4, maxWorldRadius:0.75 });
+const DEFAULT_SPEC = Object.freeze({ minPx:2, maxPx:4, baseWorldRadius:0.10, maxWorldRadius:0.75 });
 
 export function visualOrbitOffsetAU({ alongAU, verticalAU, radialAU }) {
   const length = Math.hypot(alongAU, verticalAU, radialAU);
@@ -42,9 +42,8 @@ export function projectedMotionMarker(name, distance, viewportHeight, verticalFo
   const halfFov = Math.max(1, Math.min(89, verticalFovDegrees / 2)) * Math.PI / 180;
   const pxPerUnit = height / (2 * Math.tan(halfFov) * d);
   // minPx/maxPx are RADII, not diameters.
-  const worldRadius = Math.min(
-    spec.maxWorldRadius,
-    Math.max(0, Math.min(spec.minPx, spec.maxPx)) / pxPerUnit
-  );
+  const naturalPx = spec.baseWorldRadius * pxPerUnit;
+  const desiredPx = Math.max(spec.minPx, Math.min(spec.maxPx, naturalPx));
+  const worldRadius = Math.min(spec.maxWorldRadius, desiredPx / pxPerUnit);
   return { worldRadius, projectedRadiusPx: worldRadius * pxPerUnit, minPx:spec.minPx, maxPx:spec.maxPx };
 }
