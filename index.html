@@ -887,12 +887,33 @@ function configureTime(){
 }
 function advanceTime(delta){
  const r=TIME_RANGES[state.mode];if(!r)return;
- const prior=timelineValue();
- let value=Math.max(r.min,Math.min(r.max,prior+delta));
- if(value===r.max&&state.playing)value=r.min;
- if(state.mode==='universe')state.lookbackYears=value;
- else setSharedEpoch(state.timelineOriginYears+(r.unit==='days'?value/365.25:value));
- el('dateSlider').value=String(value);el('dateLabel').textContent=timeLabel();
+ let value=timelineValue()+delta;
+ if(state.mode==='universe'){
+  value=Math.max(r.min,Math.min(r.max,value));
+  state.lookbackYears=value;
+  if(value===r.min||value===r.max){state.playing=false;el('playPause').textContent='▶ Play';}
+ }else{
+  const span=r.max-r.min, factor=r.unit==='days'?365.25:1;
+  let shifted=false;
+  // The range is a sliding VIEWPORT on the same absolute epoch, not a
+  // second clock. Advance through slider limits rather than wrapping time.
+  if(value>r.max){
+   const shift=value-r.max+span*.20;
+   state.timelineOriginYears+=shift/factor;value-=shift;shifted=true;
+  }else if(value<r.min){
+   const shift=r.min-value+span*.20;
+   state.timelineOriginYears-=shift/factor;value+=shift;shifted=true;
+  }
+  setSharedEpoch(state.timelineOriginYears+value/factor);
+  if(shifted&&state.mode==='motion'){
+   state.motionOriginYears=state.timelineOriginYears+r.min/factor;
+   const saved={distance:state.distance,phi:state.phi,theta:state.theta};
+   build();state.distance=saved.distance;state.phi=saved.phi;state.theta=saved.theta;
+   updateMotionPositions(); // new world-space trail origin, SAME physical epoch
+  }
+ }
+ el('dateSlider').value=String(value);
+ el('dateLabel').textContent=timeLabel();
  updateTimePositions();
 }
 function updateTimePositions(){
