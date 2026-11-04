@@ -6,6 +6,8 @@ on:
       - "index.html"
       - "scripts/galactic-kinematics.mjs"
       - "scripts/test_galactic_persistence.mjs"
+      - "scripts/planet-nine-scenario.mjs"
+      - "scripts/test_planet_nine_scenario.mjs"
       - ".github/workflows/galactic-persistence.yml"
 permissions:
   contents: read
@@ -19,10 +21,13 @@ jobs:
         with:
           node-version: "22"
       - name: Validate Galactic reference-frame math
-        run: node scripts/test_galactic_persistence.mjs
+        run: |
+          node scripts/test_galactic_persistence.mjs
+          node scripts/test_planet_nine_scenario.mjs
       - name: Syntax-check imported module and app script
         run: |
           node --check scripts/galactic-kinematics.mjs
+          node --check scripts/planet-nine-scenario.mjs
           python3 - <<'PY'
           from pathlib import Path
           html = Path('index.html').read_text()
