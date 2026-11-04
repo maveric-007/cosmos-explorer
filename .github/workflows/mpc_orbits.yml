@@ -15,7 +15,7 @@ concurrency:
 jobs:
   import:
     runs-on: ubuntu-latest
-    timeout-minutes: 6
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -23,7 +23,7 @@ jobs:
           python-version: "3.12"
       - name: Test fail-closed MPC parsing and idempotency
         run: python scripts/sync_mpc_orbits.py --self-test
-      - name: Fetch four documented MPC orbit solutions
+      - name: Fetch selected MPC orbits including distant trans-Neptunian objects
         run: python scripts/sync_mpc_orbits.py
       - name: Validate source records and bounded output
         run: |
@@ -33,8 +33,8 @@ jobs:
           v=json.loads(p.read_text())
           s=json.loads(pathlib.Path("data/mpc-orbits-sync-status.json").read_text())
           assert v["schema"]=="cosmos-explorer-mpc-orbits-sample-v1"
-          assert v["sample_only"] and v["row_count"]==4
-          assert {r["designation_queried"] for r in v["records"]}=={"Ceres","Vesta","Bennu","Apophis"}
+          assert v["sample_only"] and v["row_count"]==9
+          assert {r["designation_queried"] for r in v["records"]}=={"Ceres","Vesta","Bennu","Apophis","Sedna","2012 VP113","2015 TG387","2013 FT28","2014 SR349"}
           assert all(r["mpc_orb"] for r in v["records"])
           assert p.stat().st_size<350000
           assert s["last_imported_utc"] and s["normalized_sha256"]
