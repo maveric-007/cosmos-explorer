@@ -35,11 +35,29 @@ try {
     // The main solar-system experience must include the moving Galactic
     // reference frame, while retaining the source ephemeris Sun-centered view.
     assert.equal(await page.locator('#quickMode').inputValue(), 'motion', `${width}px: moving Solar System is not default`);
-    assert.match(await page.locator('#dateLabel').textContent(), /425/);
+    assert.match(await page.locator('#dateLabel').textContent(), /2026-10-24 reference/);
+    // Move the one global simulation epoch, then change representations.
+    // Neither a new view nor a cosmological lookback query may reset it.
+    await page.locator('#dateSlider').evaluate(el => {
+      el.value = '37';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    assert.match(await page.locator('#dateLabel').textContent(), /\+37 yr/);
     await page.locator('#quickMode').selectOption('solar');
     assert.equal(await page.locator('#selectedName').textContent(), 'Earth');
+    assert.match(await page.locator('#dateLabel').textContent(), /\+37 yr/);
+    assert.match(await page.locator('#dateLabel').textContent(), /Kepler approximation/);
+    await page.locator('#quickMode').selectOption('milky');
+    assert.match(await page.locator('#dateLabel').textContent(), /\+37 yr/);
+    await page.locator('#quickMode').selectOption('universe');
+    assert.match(await page.locator('#dateLabel').textContent(), /\+37 yr/);
+    await page.locator('#dateSlider').evaluate(el => {
+      el.value = '-5000000000';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    });
     await page.locator('#quickMode').selectOption('motion');
     assert.equal(await page.locator('#selectedName').textContent(), 'Sun');
+    assert.match(await page.locator('#dateLabel').textContent(), /\+37 yr/);
 
     await page.locator('#quickMode').selectOption('system');
     await page.waitForFunction(() => document.querySelector('#selectedName')?.textContent === 'TRAPPIST-1', { timeout: 30000 });
