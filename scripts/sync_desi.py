@@ -7,6 +7,7 @@ complete 23 million-plus DR1 zpix table. Missing fields stay null.
 """
 import argparse,csv,datetime as dt,hashlib,io,json,math,os,pathlib,tempfile
 import urllib.parse,urllib.request
+from http_retry import read_bounded
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 DATA=ROOT/"data/desi_dr1-sample.json"
 STATUS=ROOT/"data/desi_dr1-sync-status.json"
@@ -86,10 +87,7 @@ def sync(raw,out=DATA,status=STATUS):
 def fetch():
     req=urllib.request.Request(URL,headers={
         "Accept":"text/csv","User-Agent":"CosmosExplorer/0.7 (bounded public astronomical research)"})
-    with urllib.request.urlopen(req,timeout=120) as res:
-        if res.status!=200:raise ValueError("NOIRLab TAP returned HTTP "+str(res.status))
-        payload=res.read(600001)
-        if len(payload)>600000:raise ValueError("NOIRLab TAP response exceeded fixed bound")
+    payload=read_bounded(req,max_bytes=600000,timeout=120,attempts=3)
     raw=payload.decode("utf-8-sig")
     if raw.lstrip().startswith("<") or raw.startswith("Error"):
         raise ValueError("NOIRLab TAP returned structured error, not CSV: "+raw[:350].replace("\n"," "))
