@@ -29,6 +29,10 @@ The user must be able to search the entire ingested index and drill down from sk
 7. **Metadata timestamps:** `last_checked_utc` is a fetch log; the actual source release or observation dates may differ or not be published in a machine-readable form. Preserve `last_imported_utc` and the exact source SHA separately.
 8. **Archive scope:** NASA Exoplanet Archive confirmed planets are the first planetary-system provider. The search does not yet integrate unconfirmed candidates, non-NASA catalogs of binary companions, full stellar spectroscopy, moon ephemerides, or the distribution of exoplanet comets/asteroids. Future sources must be individually provenance-tagged and deduplicated.
 
+## Hypothetical outer Solar System bodies
+
+The optional Planet Nine orbit in Cosmos Explorer is a **source-labeled hypothesis scenario**, not an addition to NASA's confirmed planets or exoplanet host counts. It has no measured current position, and its displayed phase, orbital node and argument of perihelion are arbitrary visualization settings. This is distinct from unbound rogue planets; if Planet Nine exists as proposed, it would be gravitationally bound to the Sun. Source: [NASA Planet X status](https://science.nasa.gov/solar-system/planet-x/).
+
 ## Next expansion sequence
 
 1. Query Gaia (and supplementary Hipparcos/GALAH/APOGEE/LAMOST) using **source_id**, sky tiles and quality flags; build a scalable *all-available-star* index, including those with no known exoplanets. Respect source epoch and 5D/6D availability.
