@@ -467,31 +467,27 @@ let positions=[],indices=[];const N=60,S=48,extent=18;for(let i=0;i<=N;i++)for(l
 }
 }
 
-/* Galactic Motion is educational, not a long-range planetary ephemeris.
- * The Sun uses a straight-line Galactocentric velocity of 220 km/s.
- * Orbital radii/periods are approximate; phases, orbital planes, and the
- * alignment with the motion vector are schematic. Axial displacement is
- * visually compressed relative to AU orbital widths. */
-const MOTION_SPEED_KM_S=220;
+/* The moving Solar System uses the SAME non-circular Galactocentric
+ * trajectory as the Milky Way. Planet offsets use ephemeris in 2026-2031,
+ * otherwise Kepler two-body approximations; along-track drift is compressed. */
+const MOTION_SPEED_KM_S=GALACTIC_MODEL.azimuthalSpeedKmS;
 const MOTION_AU_PER_YEAR=MOTION_SPEED_KM_S*365.25*86400/AU_KM;
 const MOTION_UNITS_PER_YEAR=.4, MOTION_MAX_YEARS=425;
 const MOTION_ORBITS=[
- {name:'Mercury',a:.387,period:.24085,phase:.35},
- {name:'Venus',a:.723,period:.6152,phase:1.8},
- {name:'Earth',a:1,period:1,phase:2.7},
- {name:'Mars',a:1.524,period:1.881,phase:.85},
- {name:'Jupiter',a:5.203,period:11.862,phase:2.2},
- {name:'Saturn',a:9.58,period:29.457,phase:3.4},
- {name:'Uranus',a:19.2,period:84.02,phase:5.4},
- {name:'Neptune',a:30.05,period:164.8,phase:.45}
+ {name:'Mercury',a:.387,period:.24085},{name:'Venus',a:.723,period:.6152},
+ {name:'Earth',a:1,period:1},{name:'Mars',a:1.524,period:1.881},
+ {name:'Jupiter',a:5.203,period:11.862},{name:'Saturn',a:9.58,period:29.457},
+ {name:'Uranus',a:19.2,period:84.02},{name:'Neptune',a:30.05,period:164.8}
 ];
 let motionTrails=[],motionGaiaCatalog=null;
 function motionPosition(name,year){
- const drift=year*MOTION_UNITS_PER_YEAR;
- const o=MOTION_ORBITS.find(p=>p.name===name);
- if(!o)return new THREE.Vector3(drift,0,0);
- const a=2*Math.PI*year/o.period+o.phase;
- return new THREE.Vector3(drift+o.a*.18*Math.cos(a),o.a*.95*Math.cos(a),o.a*Math.sin(a));
+ const drift=galacticOffsetAU(year,state.motionOriginYears);
+ const compress=MOTION_UNITS_PER_YEAR/MOTION_AU_PER_YEAR;
+ if(name==='Sun')return new THREE.Vector3(drift.alongAU*compress,drift.verticalAU*compress,drift.radialAU*compress);
+ const orbit=heliocentricState(name,year);
+ const rel=eclipticToGalacticTangentAU(orbit.pos,state.motionOriginYears);
+ return new THREE.Vector3(drift.alongAU*compress+rel.alongAU,
+  drift.verticalAU*compress+rel.verticalAU,drift.radialAU*compress+rel.radialAU);
 }
 function addMotionSky(){
  // Published RA/Dec sky DIRECTIONS, not actual heliocentric star distances.
@@ -538,39 +534,60 @@ function buildMotion(){
  addMotionSky();
  if(state.tracks){
   const sunTrail=[];
-  for(let y=0;y<=MOTION_MAX_YEARS;y++)sunTrail.push(motionPosition('Sun',y));
+  for(let y=0;y<=MOTION_MAX_YEARS;y++)sunTrail.push(motionPosition('Sun',state.motionOriginYears+y));
   const mesh=line(sunTrail,0xffca80,.60);
   motionTrails.push({mesh,samples:sunTrail.length});
  }
- addSphere('Sun',motionPosition('Sun',state.timeYears),1.7,0xffc45d,'sun',true);
+ addSphere('Sun',motionPosition('Sun',state.epochYears),1.7,0xffc45d,'sun',true);
  for(const o of MOTION_ORBITS){
   const planet=PLANETS.find(p=>p.name===o.name);
-  addSphere(o.name,motionPosition(o.name,state.timeYears),Math.max(.32,planet.r*1.5),planet.color,'planet');
+  addSphere(o.name,motionPosition(o.name,state.epochYears),Math.max(.32,planet.r*1.5),planet.color,'planet');
   if(!state.tracks)continue;
   const dt=Math.max(.03,Math.min(.8,o.period/16));
   const n=Math.ceil(MOTION_MAX_YEARS/dt)+1;
   const pts=[];
-  for(let j=0;j<n;j++)pts.push(motionPosition(o.name,MOTION_MAX_YEARS*j/(n-1)));
+  for(let j=0;j<n;j++)pts.push(motionPosition(o.name,state.motionOriginYears+MOTION_MAX_YEARS*j/(n-1)));
   const op=(o.name==='Jupiter'||o.name==='Uranus')?.63:.37;
   const mesh=line(pts,planet.color,op);
   motionTrails.push({mesh,samples:n});
  }
 }
 function updateMotionPositions(){
- const y=Math.max(0,Math.min(MOTION_MAX_YEARS,state.timeYears));
+ const elapsed=Math.max(0,Math.min(MOTION_MAX_YEARS,state.epochYears-state.motionOriginYears));
  for(const mesh of objects){
   if(mesh.userData.name==='Sun'||MOTION_ORBITS.some(p=>p.name===mesh.userData.name))
-   mesh.position.copy(motionPosition(mesh.userData.name,y));
+   mesh.position.copy(motionPosition(mesh.userData.name,state.epochYears));
  }
- for(const t of motionTrails)t.mesh.geometry.setDrawRange(0,Math.max(2,Math.floor(y/MOTION_MAX_YEARS*(t.samples-1))+1));
- const focus=motionPosition(state.selected,y);
- state.target.copy(focus).add(new THREE.Vector3(-36,0,0));
- updateCamera();
- el('stageNote').textContent='Elapsed '+f(y,1)+' yr · Sun traveled ≈'+f(y*MOTION_AU_PER_YEAR,0)+' AU · helical tracks are illustrative; drift is visually compressed.';
+ for(const t of motionTrails)t.mesh.geometry.setDrawRange(0,Math.max(2,Math.floor(elapsed/MOTION_MAX_YEARS*(t.samples-1))+1));
+ const focus=motionPosition(state.selected,state.epochYears);
+ state.target.copy(focus).add(new THREE.Vector3(-36,0,0));updateCamera();
+ const drift=galacticOffsetAU(state.epochYears,state.motionOriginYears);
+ el('stageNote').textContent='Galactic displacement ≈'+f(drift.displacementAU,0)+' AU since trail start · '+epochDescription()+' · compressed scale, approximate orbit.';
 }
-
 function buildLocal(){addSphere('Sun',new THREE.Vector3(0,0,0),.42,0xffd07e,'sun',true);for(const star of STARS){const pos=measuredStarPosition(star,state.timeYears);const m=addSphere(star.name,pos,star.name==='TRAPPIST-1'?.26:.32,star.c,'star',true);m.userData.astrometric=Boolean(STAR_ASTROMETRY[star.name]);line([new THREE.Vector3(),pos.clone()],0x456b88,.19);}addGrid(94);buildConstellationOverlay();buildHostOverlay();}
-function buildMilky(){const pts=[];const N=12500;for(let i=0;i<N;i++){let arm=i%4,seed=(i*97.131)%1,rad=Math.sqrt((i+.5)/N)*34+1.6,angle=arm*Math.PI/2+rad*.43+(seed-.5)*.7+((i*73)%97)/97*.2;let x=rad*Math.cos(angle),z=rad*Math.sin(angle),y=((i*19)%113/113-.5)*(.2+1.8*Math.exp(-rad/11));pts.push(x,y,z);}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));const mat=new THREE.PointsMaterial({color:0xb6cbeb,transparent:true,opacity:.7,size:.25,sizeAttenuation:true});root.add(new THREE.Points(g,mat));addSphere('Sagittarius A*',new THREE.Vector3(),1.15,0xffc78a,'blackhole',true);addSphere('Sun (galactic orbit)',new THREE.Vector3(26,0,0),.7,0xffd47f,'sun');const ring=[];for(let i=0;i<241;i++){const a=2*Math.PI*i/240;ring.push(new THREE.Vector3(26*Math.cos(a),0,26*Math.sin(a)));}line(ring,0xffcf91,.60);addGrid(84);buildConstellationOverlay();buildHostOverlay();}
+const GALACTIC_SCENE_KPC=26/GALACTIC_MODEL.radiusKpc;
+function galacticSceneSun(years){
+ const p=galacticSunKpc(years);
+ return new THREE.Vector3(p.x*GALACTIC_SCENE_KPC,p.y*GALACTIC_SCENE_KPC,p.z*GALACTIC_SCENE_KPC);
+}
+function buildMilky(){
+ const pts=[],N=12500;
+ for(let i=0;i<N;i++){
+  let arm=i%4,seed=(i*97.131)%1,rad=Math.sqrt((i+.5)/N)*34+1.6;
+  let angle=arm*Math.PI/2+rad*.43+(seed-.5)*.7+((i*73)%97)/97*.2;
+  let x=rad*Math.cos(angle),z=rad*Math.sin(angle),y=((i*19)%113/113-.5)*(.2+1.8*Math.exp(-rad/11));
+  pts.push(x,y,z);
+ }
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
+ root.add(new THREE.Points(g,new THREE.PointsMaterial({color:0xb6cbeb,transparent:true,opacity:.7,size:.25,sizeAttenuation:true})));
+ addSphere('Sagittarius A*',new THREE.Vector3(),1.15,0xffc78a,'blackhole',true);
+ addSphere('Sun (galactic orbit)',galacticSceneSun(state.epochYears),.7,0xffd47f,'sun');
+ if(state.tracks){
+  const path=[];for(let i=0;i<=520;i++)path.push(galacticSceneSun(-230e6+460e6*i/520));
+  line(path,0xffcf91,.60);
+ }
+ addGrid(84);buildConstellationOverlay();buildHostOverlay();
+}
 // Three observed galaxy sightlines, SIMBAD ICRS J2000 coordinates and approximate distances.
 const GALAXY_CATALOG={
  'Andromeda (M31)':{ra:(0+42/60+44.330/3600)*15,dec:41+16/60+7.5/3600,distKly:2500,src:'https://simbad.cds.unistra.fr/simbad/sim-basic?Ident=M+31'},
@@ -833,7 +850,7 @@ function configureTime(){
  [[1e8,'0.1 Gyr/s'],[5e8,'0.5 Gyr/s'],[1e9,'1 Gyr/s']];
  const sel=el('speed');sel.innerHTML='';for(const [value,label] of speeds){const o=document.createElement('option');o.value=String(value);o.textContent=label;sel.appendChild(o);}
  state.speed=speeds[1][0];sel.value=String(state.speed);
- const quality={motion:'ILLUSTRATIVE · 220 km/s galactic drift · source-backed star directions',solar:'OBSERVED / CALCULATED · Swiss Ephemeris 2026–2031',system:'ILLUSTRATIVE EXOPLANET PHASES · animate only published orbital periods; not observed epoch positions',local:'MIXED · 7,922 catalogue stars static at J2000, 3 stars with approximate linear motion, other background schematic',milky:'MIXED · stellar survey subset in approximate galactic positions; spiral and solar orbit schematic',galaxies:'MIXED · M31, M33, M87 observed directions; others schematic; Andromeda radial-only scenario',universe:'CALCULATED FLAT ΛCDM LIGHT CONE · synthetic cosmic background, not a galaxy survey'};
+ const quality={motion:'MODELLED · non-circular Galactic epicycle at 230 km/s baseline; Kepler extrapolation outside 2026–2031',solar:'OBSERVED / CALCULATED · Swiss Ephemeris 2026–2031',system:'ILLUSTRATIVE EXOPLANET PHASES · animate only published orbital periods; not observed epoch positions',local:'MIXED · 7,922 catalogue stars static at J2000, 3 stars with approximate linear motion, other background schematic',milky:'MIXED · non-circular Galactic orbit using shared epoch; spiral and most catalogue-star positions static/schematic',galaxies:'MIXED · M31, M33, M87 observed directions; others schematic; Andromeda radial-only scenario',universe:'CALCULATED FLAT ΛCDM LIGHT CONE · synthetic cosmic background, not a galaxy survey'};
  el('qualityBadge').textContent=quality[state.mode];
 }
 function advanceTime(delta){
@@ -850,7 +867,7 @@ function updateTimePositions(){
  if(state.mode==='solar'){updateSolarPositions();}else if(state.mode==='motion'){updateMotionPositions();}
  else if(state.mode==='system'){const sys=currentSystem();if(sys)for(const obj of objects){const p=sys.planets.find(p=>p.name===obj.userData.planetName);if(!p)continue;const orbit=orbitData(p,sys);if(!orbit)continue;const e=Math.max(0,Math.min(.94,p.eccentricity??0)),a=orbit.a,b=a*Math.sqrt(1-e*e),i=sys.planets.indexOf(p),phase=(((i*1.61803398875)%1)+(p.period_days>0?state.day/p.period_days:0))*2*Math.PI;obj.position.copy(visualSystemPosition([a*(Math.cos(phase)-e),b*Math.sin(phase)]));}}
  else if(state.mode==='local'){for(const o of objects){const s=STARS.find(a=>a.name===o.userData.name);if(s&&STAR_ASTROMETRY[s.name])o.position.copy(measuredStarPosition(s,state.timeYears));}}
- else if(state.mode==='milky'){const sun=objects.find(o=>o.userData.name==='Sun (galactic orbit)');if(sun){const ang=2*Math.PI*(state.timeYears/230e6);sun.position.set(26*Math.cos(ang),0,26*Math.sin(ang));}}
+ else if(state.mode==='milky'){const sun=objects.find(o=>o.userData.name==='Sun (galactic orbit)');if(sun){sun.position.copy(galacticSceneSun(state.epochYears));}}
  else if(state.mode==='galaxies'){
   const g=objects.find(o=>o.userData.name==='Andromeda (M31)');
   if(g){const d=GALS.find(x=>x.name==='Andromeda (M31)');const p=galaxyPosition(d);const change=(-110)*KM_S_TO_LY_YR*state.timeYears/10000;g.position.copy(p.addScaledVector(p.clone().normalize(),change));}
