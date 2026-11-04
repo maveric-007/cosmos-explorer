@@ -164,6 +164,40 @@ try {
     }
 
     console.log(JSON.stringify({ viewport: width, status: 'PASS', planetaryHost: data.systemSelected, systemSearchBeforeScene: width <= 760 || landscape, stageHeight: data.stageHeight }));
+    // Regression for the real iPhone screenshot: Sun swallowed Venus/Earth
+    // and Jupiter was a huge disk. Rendering must remain bounded even under
+    // extreme touch zoom while orbital separations remain legible.
+    await page.locator('#quickMode').selectOption('motion');
+    await page.locator('#dateSlider').evaluate(el => {
+      el.value = '84';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await page.waitForFunction(() => window.cosmosMotionQA?.().markers?.length >= 9);
+    const normal = await page.evaluate(() => window.cosmosMotionQA());
+    assert.equal(normal.mode, 'motion');
+    assert.ok(normal.markers.some(m => m.name === 'Sun'));
+    const byName = name => normal.markers.find(m => m.name === name);
+    const sun = byName('Sun');
+    const earth = byName('Earth');
+    const mercury = byName('Mercury');
+    const separation = (a,b) => Math.hypot(a.objectX-b.objectX,a.objectY-b.objectY,a.objectZ-b.objectZ);
+    assert.ok(separation(sun,mercury) > 6, `${width}px: Mercury orbit still buried in Sun`);
+    assert.ok(separation(sun,earth) > 14, `${width}px: Earth orbit still buried in Sun`);
+    await page.locator('#scene').evaluate(canvas => canvas.dispatchEvent(
+      new WheelEvent('wheel', { deltaY: -9000, bubbles: true, cancelable: true })
+    ));
+    await page.waitForTimeout(125);
+    const close = await page.evaluate(() => window.cosmosMotionQA());
+    assert.ok(close.cameraDistance <= 5, `${width}px: test failed to zoom in`);
+    for(const m of close.markers){
+      const cap = m.name === 'Sun' ? 9 : (['Jupiter'].includes(m.name) ? 5.5 : 5);
+      assert.ok(m.projectedRadiusPx <= cap + 0.1,
+        `${width}px: ${m.name} is ${m.projectedRadiusPx}px radius, expected at most ${cap}px`);
+    }
+    if(width===390) await page.screenshot({
+      path: 'artifacts/mobile-smoke/moving-close-390.png', fullPage:false
+    });
+
     // A 425-year motion window must slide without resetting the shared epoch.
     await page.locator('#quickMode').selectOption('motion');
     await page.locator('#dateSlider').evaluate(el => {
