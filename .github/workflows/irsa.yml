@@ -24,10 +24,16 @@ jobs:
         with:
           python-version: "3.12"
       - name: Test shared IRSA importer offline
-        run: python scripts/sync_irsa.py --self-test
+        run: |
+          python scripts/http_retry.py
+          python scripts/sync_irsa.py --self-test
       - name: Import AllWISE first (747634026 published full-source entries)
+        id: allwise
+        continue-on-error: true
         run: python scripts/sync_irsa.py --source allwise
-      - name: Import 2MASS second (470992970 published point sources)
+      - name: Import 2MASS independently (470992970 published point sources)
+        id: twomass
+        continue-on-error: true
         run: python scripts/sync_irsa.py --source twomass
       - name: Verify distinct source catalogs and audit records
         run: |
@@ -58,3 +64,9 @@ jobs:
             git rebase origin/main
             git push origin HEAD:main
           fi
+      - name: Fail workflow if either catalog could not be refreshed
+        if: steps.allwise.outcome == 'failure' || steps.twomass.outcome == 'failure'
+        run: |
+          echo "AllWISE: ${{ steps.allwise.outcome }}; 2MASS: ${{ steps.twomass.outcome }}"
+          echo "An upstream failure did not overwrite either catalog's last verified snapshot."
+          exit 1
