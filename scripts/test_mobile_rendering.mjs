@@ -58,6 +58,20 @@ try {
     await page.locator('#quickMode').selectOption('motion');
     assert.equal(await page.locator('#selectedName').textContent(), 'Sun');
     assert.match(await page.locator('#dateLabel').textContent(), /\+37 yr/);
+    // Hypothetical Planet Nine is opt-in, named explicitly, and navigable.
+    const ninth = await page.evaluate(() => {
+      const buttons = [...document.querySelectorAll('#objects button')];
+      const toggle = buttons.find(b => b.textContent.includes('Show Planet Nine hypothesis'));
+      if (!toggle) return false;
+      toggle.click();
+      const listed = [...document.querySelectorAll('#objects button')].some(
+        b => b.textContent.trim() === 'Planet Nine (hypothesis)');
+      const hide = [...document.querySelectorAll('#objects button')].find(
+        b => b.textContent.includes('Hide Planet Nine hypothesis'));
+      hide?.click();
+      return listed;
+    });
+    assert.equal(ninth, true, 'optional unconfirmed Planet Nine is missing');
 
     await page.locator('#quickMode').selectOption('system');
     await page.waitForFunction(() => document.querySelector('#selectedName')?.textContent === 'TRAPPIST-1', { timeout: 30000 });
@@ -150,6 +164,18 @@ try {
     }
 
     console.log(JSON.stringify({ viewport: width, status: 'PASS', planetaryHost: data.systemSelected, systemSearchBeforeScene: width <= 760 || landscape, stageHeight: data.stageHeight }));
+    // A 425-year motion window must slide without resetting the shared epoch.
+    await page.locator('#quickMode').selectOption('motion');
+    await page.locator('#dateSlider').evaluate(el => {
+      el.value = '425';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await page.locator('#playPause').evaluate(el => el.click());
+    await page.waitForFunction(
+      () => Number(document.getElementById('dateSlider').value) < 400,
+      { timeout: 15000 });
+    assert.match(await page.locator('#dateLabel').textContent(), /\+42[5-9] yr/,
+      `${width}px: playback reset instead of advancing past window boundary`);
     await context.close();
   }
 } finally { await browser.close(); }
