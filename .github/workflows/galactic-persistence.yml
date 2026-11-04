@@ -8,6 +8,8 @@ on:
       - "scripts/test_galactic_persistence.mjs"
       - "scripts/planet-nine-scenario.mjs"
       - "scripts/test_planet_nine_scenario.mjs"
+      - "scripts/motion-render-scaling.mjs"
+      - "scripts/test_motion_render_scaling.mjs"
       - ".github/workflows/galactic-persistence.yml"
 permissions:
   contents: read
@@ -24,10 +26,12 @@ jobs:
         run: |
           node scripts/test_galactic_persistence.mjs
           node scripts/test_planet_nine_scenario.mjs
+          node scripts/test_motion_render_scaling.mjs
       - name: Syntax-check imported module and app script
         run: |
           node --check scripts/galactic-kinematics.mjs
           node --check scripts/planet-nine-scenario.mjs
+          node --check scripts/motion-render-scaling.mjs
           python3 - <<'PY'
           from pathlib import Path
           html = Path('index.html').read_text()
