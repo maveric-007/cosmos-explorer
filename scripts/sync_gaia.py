@@ -3,6 +3,7 @@
 This is a quality-filtered sample, NOT all Gaia stars or a 6D dynamical model.
 """
 import argparse,csv,datetime as dt,hashlib,io,json,math,os,pathlib,tempfile,urllib.parse,urllib.request
+from http_retry import read_bounded
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 OUT=ROOT/"data/gaia-sample.json"
 STATUS=ROOT/"data/gaia-sync-status.json"
@@ -84,10 +85,8 @@ def main():
     if a.input:raw=pathlib.Path(a.input).read_text()
     else:
         request=urllib.request.Request(URL,headers={"User-Agent":"CosmosExplorer/0.5","Accept":"text/csv"})
-        with urllib.request.urlopen(request,timeout=110) as r:
-            data=r.read(2000001)
-            if len(data)>2000000:raise ValueError("Oversized TAP response")
-            raw=data.decode()
+        data=read_bounded(request,max_bytes=2000000,timeout=110,attempts=3)
+        raw=data.decode("utf-8-sig")
     if raw.lstrip().startswith("<"):raise ValueError("TAP returned error markup, not CSV")
     print(json.dumps(sync(raw),indent=2))
 if __name__=="__main__":main()
