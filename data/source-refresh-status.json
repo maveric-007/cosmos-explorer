@@ -1,25 +1,25 @@
 {
   "schema": "cosmos-explorer-source-refresh-status-v1",
-  "generated_at_utc": "2026-11-05T16:52:31Z",
+  "generated_at_utc": "2026-11-06T16:19:41Z",
   "semantics": "last_checked_utc is an HTTP metadata-check attempt, not a verified provider release or an import. last_successful_check_utc confirms endpoint response only. Null means unknown/unverified. NASA uses its own validated importer. provider release dates must be sourced explicitly.",
   "sources": {
     "nasa_exoplanets": {
-      "last_checked_utc": "2026-11-05T14:42:51Z",
-      "last_successful_check_utc": "2026-11-05T14:42:51Z",
+      "last_checked_utc": "2026-11-06T14:20:58Z",
+      "last_successful_check_utc": "2026-11-06T14:20:58Z",
       "publisher_release_utc": null,
-      "last_imported_utc": "2026-10-25T16:29:39Z",
+      "last_imported_utc": "2026-11-06T14:20:58Z",
       "last_imported_date": null,
-      "check_status": "unchanged",
+      "check_status": "updated",
       "import_state": "ingested",
       "method": "NASA PSCompPars validated full import",
       "remote_etag": null,
       "remote_last_modified": null,
       "error": null,
       "counts": {
-        "confirmed_planets": 6451,
-        "host_systems": 4847,
-        "located_hosts_3d": 4819,
-        "planets_with_semimajor_axis": 5956
+        "confirmed_planets": 6464,
+        "host_systems": 4857,
+        "located_hosts_3d": 4829,
+        "planets_with_semimajor_axis": 5965
       }
     },
     "gaia_dr3": {
@@ -37,8 +37,8 @@
       "count": 1000
     },
     "galah_dr4": {
-      "last_checked_utc": "2026-11-05T16:52:07Z",
-      "last_successful_check_utc": "2026-11-05T16:52:07Z",
+      "last_checked_utc": "2026-11-06T16:19:17Z",
+      "last_successful_check_utc": "2026-11-06T16:19:17Z",
       "publisher_release_utc": null,
       "last_imported_utc": null,
       "last_imported_date": null,
@@ -51,8 +51,8 @@
       "last_http_status": 200
     },
     "apogee_dr17": {
-      "last_checked_utc": "2026-11-05T16:52:07Z",
-      "last_successful_check_utc": "2026-11-05T16:52:07Z",
+      "last_checked_utc": "2026-11-06T16:19:17Z",
+      "last_successful_check_utc": "2026-11-06T16:19:17Z",
       "publisher_release_utc": null,
       "last_imported_utc": null,
       "last_imported_date": null,
@@ -133,7 +133,7 @@
       }
     },
     "simbad": {
-      "last_checked_utc": "2026-11-05T16:52:08Z",
+      "last_checked_utc": "2026-11-06T16:19:18Z",
       "last_successful_check_utc": null,
       "publisher_release_utc": null,
       "last_imported_utc": null,
@@ -147,7 +147,7 @@
       "last_http_status": null
     },
     "vizier": {
-      "last_checked_utc": "2026-11-05T16:52:17Z",
+      "last_checked_utc": "2026-11-06T16:19:27Z",
       "last_successful_check_utc": null,
       "publisher_release_utc": null,
       "last_imported_utc": null,
@@ -212,8 +212,8 @@
       }
     },
     "nasa_pds": {
-      "last_checked_utc": "2026-11-05T16:52:26Z",
-      "last_successful_check_utc": "2026-11-05T16:52:26Z",
+      "last_checked_utc": "2026-11-06T16:19:36Z",
+      "last_successful_check_utc": "2026-11-06T16:19:36Z",
       "publisher_release_utc": null,
       "last_imported_utc": null,
       "last_imported_date": null,
@@ -243,8 +243,8 @@
       }
     },
     "hi4pi": {
-      "last_checked_utc": "2026-11-05T16:52:26Z",
-      "last_successful_check_utc": "2026-11-05T16:52:26Z",
+      "last_checked_utc": "2026-11-06T16:19:36Z",
+      "last_successful_check_utc": "2026-11-06T16:19:36Z",
       "publisher_release_utc": null,
       "last_imported_utc": null,
       "last_imported_date": null,
@@ -257,8 +257,8 @@
       "last_http_status": 200
     },
     "bayestar": {
-      "last_checked_utc": "2026-11-05T16:52:26Z",
-      "last_successful_check_utc": "2026-11-05T16:52:26Z",
+      "last_checked_utc": "2026-11-06T16:19:36Z",
+      "last_successful_check_utc": "2026-11-06T16:19:36Z",
       "publisher_release_utc": null,
       "last_imported_utc": null,
       "last_imported_date": null,
@@ -271,8 +271,8 @@
       "last_http_status": 200
     },
     "planck": {
-      "last_checked_utc": "2026-11-05T16:52:27Z",
-      "last_successful_check_utc": "2026-11-05T16:52:27Z",
+      "last_checked_utc": "2026-11-06T16:19:36Z",
+      "last_successful_check_utc": "2026-11-06T16:19:36Z",
       "publisher_release_utc": null,
       "last_imported_utc": null,
       "last_imported_date": null,
@@ -285,8 +285,8 @@
       "last_http_status": 200
     },
     "sparc": {
-      "last_checked_utc": "2026-11-05T16:52:27Z",
-      "last_successful_check_utc": "2026-11-05T16:52:27Z",
+      "last_checked_utc": "2026-11-06T16:19:37Z",
+      "last_successful_check_utc": "2026-11-06T16:19:37Z",
       "publisher_release_utc": null,
       "last_imported_utc": null,
       "last_imported_date": null,
@@ -299,50 +299,50 @@
       "last_http_status": 200
     },
     "hyg": {
-      "last_checked_utc": "2026-11-05T16:52:28Z",
-      "last_successful_check_utc": "2026-11-05T16:52:28Z",
+      "last_checked_utc": "2026-11-06T16:19:38Z",
+      "last_successful_check_utc": "2026-11-06T16:19:38Z",
       "publisher_release_utc": null,
       "last_imported_utc": null,
       "last_imported_date": "2026-10-24",
       "check_status": "endpoint_reachable_release_unverified",
       "import_state": "bundled_sample",
       "method": "HEAD endpoint metadata only",
-      "remote_etag": "W/\"a4eec63950d9f343292ea4bc800652e1\"",
+      "remote_etag": "W/\"05594d8d83f15264054e1716eda78033\"",
       "remote_last_modified": null,
       "error": null,
       "last_http_status": 200
     },
     "starmap": {
-      "last_checked_utc": "2026-11-05T16:52:28Z",
-      "last_successful_check_utc": "2026-11-05T16:52:28Z",
+      "last_checked_utc": "2026-11-06T16:19:38Z",
+      "last_successful_check_utc": "2026-11-06T16:19:38Z",
       "publisher_release_utc": null,
       "last_imported_utc": null,
       "last_imported_date": "2026-10-24",
       "check_status": "endpoint_reachable_release_unverified",
       "import_state": "bundled_sample",
       "method": "HEAD endpoint metadata only",
-      "remote_etag": "W/\"865a7468b1c48f5cbd94e32982bcd6e8\"",
+      "remote_etag": "W/\"21f80438dd868c3be8e249a4dc22c539\"",
       "remote_last_modified": null,
       "error": null,
       "last_http_status": 200
     },
     "stellarium": {
-      "last_checked_utc": "2026-11-05T16:52:30Z",
-      "last_successful_check_utc": "2026-11-05T16:52:30Z",
+      "last_checked_utc": "2026-11-06T16:19:39Z",
+      "last_successful_check_utc": "2026-11-06T16:19:39Z",
       "publisher_release_utc": null,
       "last_imported_utc": null,
       "last_imported_date": "2026-10-24",
       "check_status": "endpoint_reachable_release_unverified",
       "import_state": "bundled_sample",
       "method": "HEAD endpoint metadata only",
-      "remote_etag": "W/\"727c0e8b94d3a8532514bf7d404dbb3b\"",
+      "remote_etag": "W/\"37b80eec2dd98e3e1c2e80ab553b8c82\"",
       "remote_last_modified": null,
       "error": null,
       "last_http_status": 200
     },
     "swiss_ephemeris": {
-      "last_checked_utc": "2026-11-05T16:52:30Z",
-      "last_successful_check_utc": "2026-11-05T16:52:30Z",
+      "last_checked_utc": "2026-11-06T16:19:40Z",
+      "last_successful_check_utc": "2026-11-06T16:19:40Z",
       "publisher_release_utc": null,
       "last_imported_utc": null,
       "last_imported_date": null,
