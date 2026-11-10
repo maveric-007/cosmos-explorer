@@ -17,6 +17,10 @@
 8. [Data release / refresh protocol](DATA_REFRESH_PROTOCOL.md) — last checked vs publisher released vs imported, provenance and failure gates.
 9. [Migration manifest](MIGRATION_MANIFEST.md) — precise original Home paths and matching Git blob checksums.
 
+## Earth mass accounting — current evidence ledger (2026-11-10)
+
+[Earth mass, measured/inferred parameters, partial inflow/outflow estimates, and explicitly unknown net change](EARTH_MASS_BUDGET.md) now have a provenance-labeled viewer panel. The values are *not* a fully measured Earth material budget or a validated time-varying solar-system gravitational model. The authoritative machine-readable inputs for the viewer reside in [`scripts/earth-mass-accounting.mjs`](../scripts/earth-mass-accounting.mjs).
+
 ## Archived laboratory studies (source copies intact)
 
 ### Earth controls — `research/Gravity-Research/`
