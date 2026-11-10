@@ -2,6 +2,10 @@
 
 An interactive 3D astronomy exploration application for Safari and desktop browsers.
 
+## Earth mass evidence ledger (2026-11-10)
+
+Selecting **Earth** in the Solar System or Moving Solar System inspector opens an evidence-labeled mass-accounting panel: JPL orbitally inferred `GM`, NASA's rounded Earth mass (and atmosphere already included), partial incoming/outgoing flow estimates, and an explicit **unknown** net annual mass change. It does **not** invent a complete mass census or imply that those estimates are updated daily. See [scientific scope, sources, limitations and open validation](research/EARTH_MASS_BUDGET.md); source data and UI rendering live in [scripts/earth-mass-accounting.mjs](scripts/earth-mass-accounting.mjs), with [deterministic tests](scripts/test_earth_mass_accounting.mjs). This panel is **not coupled to a dynamic gravity solver**.
+
 ## Research program — canonical home (2026-10-24)
 
 **[Open the complete research hub](research/README.md)** — personal gravity research, astronomical data sources, original Earth and SPARC studies and executable scripts, migrated from `Home/Projects/Gravity-Research` with **14 matching original Git blob SHAs**.
